@@ -65,7 +65,7 @@ const getAccount = async () => {
 const depositar = async (amount) => {
     if (!axiosInstance) return null;
     try {
-        const response = await axiosInstance.post("/transaction/deposito",
+        const response = await axiosInstance.post("/transaction/deposit",
             null,
             {
                 params: { amount: amount }
