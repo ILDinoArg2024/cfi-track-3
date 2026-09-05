@@ -58,25 +58,9 @@
             <div class="flex-1 overflow-y-auto scrollbar-hide -mx-2 px-2 pb-20">
                 <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-1">Tus Contactos</h3>
                 
-                <div class="flex flex-col gap-2">
-                    <!-- Lógica para cargar los contactos de la BD -->
-                    <!-- Contacto 1 -->
-                    <button class="btn-contacto flex items-center gap-4 p-3 rounded-2xl border border-slate-100 bg-white hover:bg-slate-50 transition shadow-sm text-left w-full" data-nombre="Franco C." data-alias="franco.alkywall">
-                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-extrabold text-sm shrink-0">FC</div>
-                        <div class="flex flex-col">
-                            <span class="text-sm font-bold text-slate-800">Franco C.</span>
-                            <span class="text-[10px] font-medium text-slate-500">Banco Galicia</span>
-                        </div>
-                    </button>
-                    <!-- Contacto 2 -->
-                    <button class="btn-contacto flex items-center gap-4 p-3 rounded-2xl border border-slate-100 bg-white hover:bg-slate-50 transition shadow-sm text-left w-full" data-nombre="Jonatan M." data-alias="jonatan.alkywall">
-                        <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-extrabold text-sm shrink-0">JM</div>
-                        <div class="flex flex-col">
-                            <span class="text-sm font-bold text-slate-800">Jonatan M.</span>
-                            <span class="text-[10px] font-medium text-slate-500">Mercado Pago</span>
-                        </div>
-                    </button>
-                </div>
+                <!-- Lista dinamica de contactos -->
+                <div id="listaContactosTransferir" class="flex flex-col gap-2"></div>
+                <p id="msgSinContactosTransferir" class="hidden text-xs text-slate-400 text-center py-4">No tienes contactos guardados</p>
             </div>
         </div>
 

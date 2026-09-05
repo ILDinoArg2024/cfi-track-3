@@ -54,29 +54,41 @@ const transferir = async (newTransferRequest) => {
         console.error(error);
         return null;
     }
-}
+};
 
-document.addEventListener('DOMContentLoaded', () => {
+// Trae los contactos guardados
+const getContactos = async () => {
+    if (!axiosInstance) return [];
+    try {
+        const response = await axiosInstance.get("/contacts");
+        return response.data.data || [];
+    } catch (error) {
+        console.error(error);
+        return [];
+    }
+};
 
-    // --- Referencias al DOM (Pasos) ---
+document.addEventListener('DOMContentLoaded', async () => {
+
+    // --- Referencias al DOM ---
     const paso1 = document.getElementById('paso1');
     const paso2 = document.getElementById('paso2');
     const paso3 = document.getElementById('paso3');
     const btnVolver = document.getElementById('btnVolver');
 
-    // --- Referencias Paso 1 ---
+
     const inputDestinatario = document.getElementById('inputDestinatario');
     const btnBuscar = document.getElementById('btnBuscar');
     const botonesContactos = document.querySelectorAll('.btn-contacto');
 
-    // --- Referencias Paso 2 ---
+
     const avatarDestinatario = document.getElementById('avatarDestinatario');
     const nombreDestinatario = document.getElementById('nombreDestinatario');
     const btnCambiarDestino = document.getElementById('btnCambiarDestino');
     const inputMonto = document.getElementById('inputMonto');
     const btnContinuarMonto = document.getElementById('btnContinuarMonto');
 
-    // --- Referencias Paso 3 ---
+
     const resumenMonto = document.getElementById('resumenMonto');
     const resumenNombre = document.getElementById('resumenNombre');
     const resumenAlias = document.getElementById('resumenAlias');
@@ -85,11 +97,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const nombreAgendado = document.getElementById('nombreAgendado');
     const btnTransferir = document.getElementById('btnTransferir');
 
-    // Toggle de Guardar
+    // Guardar
     const toggleGuardar = document.getElementById('toggleGuardar');
     const toggleBolaGuardar = document.getElementById('toggleBolaGuardar');
 
-    // --- Variables de Estado ---
+
     let currentStep = 1;
     let destinatarioActual = { firstName: '', alias: '', esNuevo: false };
     let montoActual = 0;
@@ -99,16 +111,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const paso5 = document.getElementById('paso5');
     const btnReintentar = document.getElementById('btnReintentar');
 
-    // ==========================================
-    // INICIALIZACIÓN (Parámetros por URL)
-    // ==========================================
+
+    // INICIALIZACIÓN
+
     const urlParams = new URLSearchParams(window.location.search);
     const paramAlias = urlParams.get('alias');
     const paramNombre = urlParams.get('nombre');
 
-    // ==========================================
     // NAVEGACIÓN Y TRANSICIONES
-    // ==========================================
+
     const mostrarPaso = (paso) => {
         paso1.classList.add('hidden');
         paso2.classList.add('hidden');
@@ -190,18 +201,52 @@ document.addEventListener('DOMContentLoaded', () => {
         mostrarPaso(2);
     });
 
-    // Clic en un Contacto Frecuente
-    botonesContactos.forEach(btn => {
-        btn.addEventListener('click', () => {
-            destinatarioActual = {
-                firstName: btn.getAttribute('data-nombre'),
-                alias: btn.getAttribute('data-alias'),
-                esNuevo: false
-            };
-            llenarFichaPaso2();
-            mostrarPaso(2);
+    // Carga los contactos en el paso 1
+    const cargarContactosPaso1 = async () => {
+        const listaContenedor = document.getElementById('listaContactosTransferir');
+        const msgSinContactos = document.getElementById('msgSinContactosTransferir');
+        if (!listaContenedor) return;
+
+        const contactos = await getContactos();
+        listaContenedor.innerHTML = '';
+
+        if (contactos.length === 0) {
+            if (msgSinContactos) msgSinContactos.classList.remove('hidden');
+            return;
+        }
+
+        if (msgSinContactos) msgSinContactos.classList.add('hidden');
+
+        contactos.forEach(contacto => {
+            const nombre = contacto.name || `${contacto.contactFirstName || ''} ${contacto.contactLastName || ''}`.trim();
+            const alias = contacto.alias || contacto.accountNumber || '';
+            const iniciales = nombre.substring(0, 2).toUpperCase() || 'C';
+
+            const btn = document.createElement('button');
+            btn.className = 'btn-contacto flex items-center gap-4 p-3 rounded-2xl border border-slate-100 bg-white hover:bg-slate-50 transition shadow-sm text-left w-full';
+            btn.innerHTML = `
+                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-extrabold text-sm shrink-0">${iniciales}</div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold text-slate-800">${nombre}</span>
+                    <span class="text-[10px] font-medium text-slate-500">${alias}</span>
+                </div>
+            `;
+
+            btn.addEventListener('click', async () => {
+                const usuarioDestino = await getUserDataByAliasOrCvu(alias);
+                if (usuarioDestino) {
+                    destinatarioActual = usuarioDestino;
+                    destinatarioActual.esNuevo = false;
+                    llenarFichaPaso2();
+                    mostrarPaso(2);
+                }
+            });
+
+            listaContenedor.appendChild(btn);
         });
-    });
+    };
+
+    cargarContactosPaso1();
 
 
     const llenarFichaPaso2 = () => {
@@ -235,8 +280,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const prepararResumen = () => {
         // Formatear monto a moneda argentina
         resumenMonto.innerText = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(montoActual);
-        resumenNombre.innerText = destinatarioActual.firstName;
-        resumenAlias.innerText = destinatarioActual.alias;
+        resumenNombre.innerText = destinatarioActual.firstName || '';
+        resumenAlias.innerText = destinatarioActual.account ? destinatarioActual.account.alias : (destinatarioActual.alias || '');
 
         // Si el contacto es nuevo, mostramos la opción de guardarlo. Si ya existía, la ocultamos.
         if (destinatarioActual.esNuevo) {
@@ -274,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnTransferir.addEventListener('click', async () => {
         // Aquí se enviaría el fetch()/Axios al backend
         console.log("=== ENVIANDO TRANSFERENCIA ===");
-        console.log("Destino:", destinatarioActual.account.alias);
+        console.log("Destino:", destinatarioActual.account ? destinatarioActual.account.alias : destinatarioActual.alias);
         console.log("Monto:", montoActual);
 
         if (destinatarioActual.esNuevo && guardarContacto) {
@@ -288,6 +333,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // setTimeout(() => {
         const usuarioActual = await getUser();
 
+        if (!usuarioActual || !destinatarioActual || !destinatarioActual.account) {
+            console.error("No se pudieron obtener los datos de la cuenta");
+            btnTransferir.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Transferir`;
+            mostrarPaso(5);
+            return;
+        }
+
         const newTransferRequest = new NewTransferRequest(
             usuarioActual.account.accountNumber,
             destinatarioActual.account.accountNumber, 
@@ -295,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
             "varios"
         );
         let transferencia = await transferir(newTransferRequest);
-        if (transferencia.status != 201 && transferencia.status != 200) {
+        if (!transferencia || (transferencia.status != 201 && transferencia.status != 200)) {
             // En caso de error
             mostrarPaso(5);
             const contenedorLottieFail = document.getElementById('lottieFail');
@@ -332,16 +384,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    // AUTO-INICIO (Si venimos del Dashboard)
+    // AUTO-INICIO (Si venimos de Contactos o Dashboard)
 
-    if (paramAlias && paramNombre) {
-        destinatarioActual = {
-            firstName: paramNombre,
-            alias: paramAlias,
-            esNuevo: false
-        };
-        llenarFichaPaso2();
-        mostrarPaso(2); // Salta directo al monto
+    if (paramAlias) {
+        const usuarioDestino = await getUserDataByAliasOrCvu(paramAlias);
+        if (usuarioDestino) {
+            destinatarioActual = usuarioDestino;
+            destinatarioActual.esNuevo = false;
+            llenarFichaPaso2();
+            mostrarPaso(2); // Salta directo al monto
+        } else {
+            mostrarPaso(1);
+        }
     } else {
         // Inicialización normal
         mostrarPaso(1);

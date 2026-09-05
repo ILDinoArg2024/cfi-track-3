@@ -59,63 +59,17 @@
             
             <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 px-1 mt-2">Guardados</h3>
 
-            <!-- Elemento Contacto 1 -->
-            <div class="contacto-item flex items-center justify-between p-3 bg-white border border-slate-100 rounded-2xl shadow-sm mb-3 transition hover:border-blue-100">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-extrabold text-sm shrink-0">FC</div>
-                    <div class="flex flex-col">
-                        <span class="contacto-nombre text-sm font-bold text-slate-800">Franco C.</span>
-                        <span class="contacto-alias text-[10px] font-medium text-slate-400">franco.alkywall</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button class="btn-eliminar-contacto w-9 h-9 rounded-full bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 hover:text-red-500 transition" title="Eliminar">
-                        <i class="fa-solid fa-trash-can text-[12px]"></i>
-                    </button>
-                    <a href="../transferencia/indexTransferencia.html?alias=franco.alkywall&nombre=Franco%20C." class="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white transition page-transition" title="Transferir">
-                        <i class="fa-solid fa-paper-plane text-[11px]"></i>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Elemento Contacto 2 -->
-            <div class="contacto-item flex items-center justify-between p-3 bg-white border border-slate-100 rounded-2xl shadow-sm mb-3 transition hover:border-blue-100">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-extrabold text-sm shrink-0">X</div>
-                    <div class="flex flex-col">
-                        <span class="contacto-nombre text-sm font-bold text-slate-800">Xavier.</span>
-                        <span class="contacto-alias text-[10px] font-medium text-slate-400">xavier.alkywall</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button class="btn-eliminar-contacto w-9 h-9 rounded-full bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 hover:text-red-500 transition" title="Eliminar">
-                        <i class="fa-solid fa-trash-can text-[12px]"></i>
-                    </button>
-                    <a href="../transferencia/indexTransferencia.html?alias=xavier.alkywall&nombre=Xavier." class="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white transition page-transition" title="Transferir">
-                        <i class="fa-solid fa-paper-plane text-[11px]"></i>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Elemento Contacto 3 -->
-            <div class="contacto-item flex items-center justify-between p-3 bg-white border border-slate-100 rounded-2xl shadow-sm mb-3 transition hover:border-blue-100">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 font-extrabold text-sm shrink-0">J</div>
-                    <div class="flex flex-col">
-                        <span class="contacto-nombre text-sm font-bold text-slate-800">Jonatan M.</span>
-                        <span class="contacto-alias text-[10px] font-medium text-slate-400">jonatan.alkywall</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button class="btn-eliminar-contacto w-9 h-9 rounded-full bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 hover:text-red-500 transition" title="Eliminar">
-                        <i class="fa-solid fa-trash-can text-[12px]"></i>
-                    </button>
-                    <a href="../transferencia/indexTransferencia.html?alias=jonatan.alkywall&nombre=Jonatan%20M." class="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white transition page-transition" title="Transferir">
-                        <i class="fa-solid fa-paper-plane text-[11px]"></i>
-                    </a>
-                </div>
+            <!-- Contenedor dinámico de contactos -->
+            <div id="listaItemsContactos" class="flex flex-col">
+                <!-- Se inyectan dinámicamente con JavaScript -->
             </div>
             
+            <!-- Mensaje Estado Vacío (Sin contactos) -->
+            <div id="msgSinContactos" class="hidden flex flex-col items-center justify-center mt-10 opacity-70">
+                <i class="fa-solid fa-address-book text-4xl text-slate-300 mb-3"></i>
+                <span class="text-xs font-bold text-slate-400 text-center">Aún no tienes contactos agendados.</span>
+            </div>
+
             <!-- Mensaje Estado Vacío (Búsqueda) -->
             <div id="msgSinResultados" class="hidden flex flex-col items-center justify-center mt-10 opacity-70">
                 <i class="fa-solid fa-ghost text-4xl text-slate-300 mb-3"></i>
