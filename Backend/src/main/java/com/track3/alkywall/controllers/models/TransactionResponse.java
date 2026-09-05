@@ -1,45 +1,44 @@
 package com.track3.alkywall.controllers.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.track3.alkywall.models.Payment;
 import com.track3.alkywall.models.Transaction;
 import com.track3.alkywall.models.Transfer;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record TransactionResponse (
-        Long id,
-        BigDecimal amount,
-        String type,
-        String categoryName,
-        LocalDateTime createdAt,
+public record TransactionResponse(
+     Long id,
+     BigDecimal amount,
+     String type,
+     String categoryName,
+     LocalDateTime createdAt,
 
-        @JsonInclude(JsonInclude.Include.NON_NULL) // lo incluye en los jsons si no es null
-        TransferResponse transfer
+     @JsonInclude(JsonInclude.Include.NON_NULL) // lo incluye en los jsons si no es null
+     TransferResponse transfer,
+
+     @JsonInclude(JsonInclude.Include.NON_NULL)
+     PaymentResponse payment
 ){
-    public static TransactionResponse from(Transaction transaction){
-        if(transaction instanceof Transfer){
-            return TransactionResponse.from((Transfer)transaction);
-        }else{
-            return new TransactionResponse(
-                    transaction.getId(),
-                    transaction.getAmount(),
-                    transaction.getType(),
-                    transaction.getCategory().getName(),
-                    transaction.getCreatedAt(),
-                    null
-            );
-        }
-    }
+    public static TransactionResponse from(Transaction transaction) {
+        TransferResponse transfer = null;
+        PaymentResponse paymentResponse = null;
 
-    private static TransactionResponse from(Transfer transfer){
+        if(transaction instanceof Transfer){
+            transfer = TransferResponse.from((Transfer) transaction);
+        }else if(transaction instanceof Payment){
+            paymentResponse = PaymentResponse.from((Payment) transaction);
+        }
+
         return new TransactionResponse(
-                transfer.getId(),
-                transfer.getAmount(),
-                transfer.getType(),
-                transfer.getCategory().getName(),
-                transfer.getCreatedAt(),
-                TransferResponse.from(transfer)
+                transaction.getId(),
+                transaction.getAmount(),
+                transaction.getType(),
+                transaction.getCategory().getName(),
+                transaction.getCreatedAt(),
+                transfer,
+                paymentResponse
         );
     }
 }

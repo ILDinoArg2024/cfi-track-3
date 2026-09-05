@@ -9,9 +9,6 @@ import java.math.BigDecimal;
 
 public record NewPaymentRequest(
         @NotNull
-        String sourceAccountNumber,
-
-        @NotNull
         @Positive
         BigDecimal amount,
 

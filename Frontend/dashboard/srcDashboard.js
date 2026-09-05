@@ -140,7 +140,7 @@ async function renderizarMovimientos(){
 
     listaMovimientos.innerHTML = '';
 
-    let movimientosHTML = await obtenerMovimientosHTML(null, false);
+    let movimientosHTML = await obtenerMovimientosHTML(null, false, 15);
 
     if (movimientosHTML === "") {
         // Mostrar mensaje vacío

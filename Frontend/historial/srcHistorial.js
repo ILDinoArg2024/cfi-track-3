@@ -49,12 +49,28 @@ function formatDate(dateString) {
     });
 }
 
-export async function obtenerMovimientosHTML(type = null, mostrarFecha = true) {
+const ESTILOS_CATEGORIAS = {
+    'SUPERMERCADO': { icon: 'fa-cart-shopping', iconBg: 'bg-indigo-50', iconColor: 'text-indigo-500', iconBorderColor: 'border-indigo-100' },
+    'COMIDA': { icon: 'fa-burger', iconBg: 'bg-orange-50', iconColor: 'text-orange-500', iconBorderColor: 'border-orange-100' },
+    'TRANSPORTE': { icon: 'fa-car', iconBg: 'bg-sky-50', iconColor: 'text-sky-500', iconBorderColor: 'border-sky-100' },
+    'SERVICIOS': {  icon: 'fa-bolt', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-500', iconBorderColor: 'border-emerald-100' },
+    'ENTRETENIMIENTO': { icon: 'fa-ticket', iconBg: 'bg-pink-50', iconColor: 'text-pink-500', iconBorderColor: 'border-pink-100' },
+    'FARMACIA_SALUD': { icon: 'fa-heart-pulse', iconBg: 'bg-rose-50', iconColor: 'text-rose-500', iconBorderColor: 'border-rose-100' },
+    'INDUMENTARIA': { icon: 'fa-shirt', iconBg: 'bg-purple-50', iconColor: 'text-purple-500', iconBorderColor: 'border-purple-100' },
+    'OTROS': { icon: 'fa-box-archive', iconBg: 'bg-slate-50', iconColor: 'text-slate-500', iconBorderColor: 'border-slate-100' }
+};
+function obtenerIconoParaCategoria(label) {
+    return ESTILOS_CATEGORIAS[label] ?? ESTILOS_CATEGORIAS['OTROS'];
+}
+
+export async function obtenerMovimientosHTML(type = null, mostrarFecha = true, limite = null) {
     let fechaActual = "";
     const movimientos = await obtenerMovimientos(type);
     let movimientosHTML = "";
-
-    movimientos.forEach((mov) => {
+    if(limite === null) limite = movimientos.length
+    else limite = Math.min(limite, movimientos.length);
+    for(let i=0; i<limite; i++){
+        let mov = movimientos[i];
         if(mostrarFecha){
             // Mostrar separador de fecha si cambia
             let fechaFormateada = formatDate(mov.createdAt);
@@ -71,15 +87,15 @@ export async function obtenerMovimientosHTML(type = null, mostrarFecha = true) {
             esIngreso = mov.type === "CREDIT";
             colorMonto = esIngreso ? 'text-blue-600' : 'text-slate-800';
             icono = esIngreso ? {
-                clase: 'fa-solid fa-arrow-down',
-                color: "text-green-500",
-                bg: "bg-green-50",
-                borde: "border-green-100"
+                icon: 'fa-arrow-down',
+                iconColor: "text-green-500",
+                iconBg: "bg-green-50",
+                iconBorderColor: "border-green-100"
             } : {
-                clase: "fa-solid fa-arrow-up",
-                color: "text-red-500",
-                bg: "bg-red-50",
-                borde: "border-red-100"
+                icon: "fa-arrow-up",
+                iconColor: "text-red-500",
+                iconBg: "bg-red-50",
+                iconBorderColor: "border-red-100"
             };
 
             titulo = `Transferencia ${esIngreso ? 'Recibida' : 'Enviada'}`;
@@ -88,20 +104,26 @@ export async function obtenerMovimientosHTML(type = null, mostrarFecha = true) {
             esIngreso = true;
             colorMonto = 'text-blue-600';
             icono = {
-                clase: 'fa-solid fa-money-bill',
-                color: "text-blue-600",
-                bg: "bg-blue-50",
-                borde: "border-blue-100"
+                icon: 'fa-money-bill',
+                iconColor: "text-blue-600",
+                iconBg: "bg-blue-50",
+                iconBorderColor: "border-blue-100"
             }
             titulo = 'Depósito'
             desc = '';
+        }else if(mov.categoryName === "PAYMENT"){
+            esIngreso = false;
+            colorMonto = 'text-slate-800';
+            icono = obtenerIconoParaCategoria(mov.payment.categoryKey);
+            titulo = 'Pago';
+            desc = mov.payment.category;
         }
 
         movimientosHTML += `
                 <div class="p-4 rounded-[20px] bg-white border border-slate-200 shadow-sm flex items-center justify-between hover:bg-slate-50 transition cursor-pointer">
                         <div class="flex items-center gap-3">
-                            <div class="w-11 h-11 rounded-full border ${icono.borde} flex items-center justify-center ${icono.color} ${icono.bg} shrink-0">
-                                <i class="${icono.clase}"></i>
+                            <div class="w-11 h-11 rounded-full border ${icono.iconBorderColor} flex items-center justify-center ${icono.iconColor} ${icono.iconBg} shrink-0">
+                                <i class="fa-solid ${icono.icon}"></i>
                             </div>
                             <div>
                                 <p class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -117,7 +139,7 @@ export async function obtenerMovimientosHTML(type = null, mostrarFecha = true) {
                         </span>
                 </div>
                 `;
-    });
+    }
 
     return movimientosHTML
 }

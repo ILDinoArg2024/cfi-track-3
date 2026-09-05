@@ -3,7 +3,8 @@ package com.track3.alkywall.controllers;
 import com.track3.alkywall.config.DataApiResponse;
 import com.track3.alkywall.controllers.models.CategoryExpenseDTO;
 import com.track3.alkywall.controllers.models.NewPaymentRequest;
-import com.track3.alkywall.controllers.models.PaymentResponse;
+import com.track3.alkywall.controllers.models.TransactionResponse;
+import com.track3.alkywall.models.Payment;
 import com.track3.alkywall.models.PaymentCategory;
 import com.track3.alkywall.services.PaymentService;
 import jakarta.validation.Valid;
@@ -28,13 +29,12 @@ public class PaymentController {
 
     // Procesa el pago con QR
     @PostMapping
-    public ResponseEntity<DataApiResponse<PaymentResponse>> createPayment(
+    public ResponseEntity<DataApiResponse<TransactionResponse>> createPayment(
             Authentication authentication,
             @RequestBody @Valid NewPaymentRequest newPayment
     ) {
-        PaymentResponse response = paymentService.createPayment(
+        Payment payment = paymentService.createPayment(
                 authentication.getName(),
-                newPayment.sourceAccountNumber(),
                 newPayment.destinationAccount(),
                 newPayment.amount(),
                 newPayment.category(),
@@ -44,7 +44,7 @@ public class PaymentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new DataApiResponse<>(
                 true,
                 "Pago realizado con éxito",
-                response
+                TransactionResponse.from(payment)
         ));
     }
 
@@ -67,8 +67,11 @@ public class PaymentController {
 
     // Obtiene los gastos del mes del usuario agrupados por categoría
     @GetMapping("/expenses/month")
-    public ResponseEntity<DataApiResponse<List<CategoryExpenseDTO>>> getMonthlyExpenses(Authentication authentication) {
-        List<CategoryExpenseDTO> expenses = paymentService.getMonthlyExpenses(authentication.getName());
+    public ResponseEntity<DataApiResponse<List<CategoryExpenseDTO>>> getMonthlyExpenses(
+            Authentication authentication
+    ) {
+        List<CategoryExpenseDTO> expenses = CategoryExpenseDTO.from(paymentService.getMonthlyExpenses(authentication.getName()));
+
         return ResponseEntity.ok(new DataApiResponse<>(
                 true,
                 "Gastos del mes obtenidos",

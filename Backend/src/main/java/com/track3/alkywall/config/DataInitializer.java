@@ -26,11 +26,6 @@ public class DataInitializer {
             JdbcTemplate jdbcTemplate
     ) {
         return args -> {
-            // Asegura que la columna category exista en la tabla payments
-            try {
-                jdbcTemplate.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS category VARCHAR(50);");
-            } catch (Exception ignored) {}
-
             if(roleRepository.count() == 0){
                 roleRepository.save(new Role("ADMIN"));
                 roleRepository.save(new Role("USER"));
