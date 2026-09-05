@@ -118,9 +118,9 @@
                     <i class="fa-regular fa-calendar text-blue-600/70"></i> Historial
                 </a>
             </div>
-            <!--leer archivo srcDashboard.js para implementación-->
+
             <div id="listaMovimientos" class="flex-1 overflow-y-auto scrollbar-hide pb-6 flex flex-col gap-3 -mx-2 px-2">
-                <div class="p-4 rounded-[20px] bg-white border border-slate-200 shadow-sm flex items-center justify-between hover:bg-slate-50 transition cursor-pointer">
+                <!--<div class="p-4 rounded-[20px] bg-white border border-slate-200 shadow-sm flex items-center justify-between hover:bg-slate-50 transition cursor-pointer">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full border border-pink-100 flex items-center justify-center text-pink-500 bg-pink-50">
                             <i class="fa-solid fa-compact-disc text-sm"></i>
@@ -161,7 +161,15 @@
                         </div>
                     </div>
                     <span class="text-xs font-bold text-blue-600 tracking-wide">+ $ 19900,00</span>
+                </div>-->
+            </div>
+
+            <!-- Mensaje de estado vacío (Se oculta si hay datos) -->
+            <div id="msgHistorialVacio" class="hidden flex-col items-center justify-center h-full opacity-60">
+                <div class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center text-slate-400 text-2xl mb-4">
+                    <i class="fa-solid fa-receipt"></i>
                 </div>
+                <p class="text-sm font-bold text-slate-500">No hay operaciones actualmente.</p>
             </div>
         </section>
         </div>
@@ -233,6 +241,7 @@
       <script src="../fx.js"></script>
     <script src="../menu/menu.js"></script>
     <script src="../menu/bottomNav.js"></script>
-    <script src="srcDashboard.js"></script>
+    <script src="../historial/srcHistorial.js" type="module"></script>
+    <script src="srcDashboard.js" type="module"></script>
 </body>
 </html>
