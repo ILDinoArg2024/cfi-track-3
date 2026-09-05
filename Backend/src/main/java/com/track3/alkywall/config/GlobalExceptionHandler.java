@@ -65,4 +65,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse> accountNotOwnedByUserException(AccountNotOwnedByUserException exception){
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false, exception.getMessage()));
     }
+
+    // Redirige a la pagina 404 si la ruta no existe
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public Object handleNoResourceFound(
+            org.springframework.web.servlet.resource.NoResourceFoundException ex,
+            jakarta.servlet.http.HttpServletRequest request,
+            jakarta.servlet.http.HttpServletResponse response
+    ) throws java.io.IOException {
+        String uri = request.getRequestURI();
+        if (uri != null && uri.startsWith("/api/")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, "Ruta no encontrada"));
+        }
+        response.sendRedirect("/Frontend/404/index404.html");
+        return null;
+    }
 }
