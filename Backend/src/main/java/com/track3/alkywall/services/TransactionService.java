@@ -2,7 +2,9 @@ package com.track3.alkywall.services;
 
 import com.track3.alkywall.config.exceptions.InsufficientFundsException;
 import com.track3.alkywall.config.exceptions.NotFoundException;
-import com.track3.alkywall.models.*;
+import com.track3.alkywall.models.Account;
+import com.track3.alkywall.models.Category;
+import com.track3.alkywall.models.Transaction;
 import com.track3.alkywall.repositories.CategoryRepository;
 import com.track3.alkywall.repositories.TransactionRepository;
 import com.track3.alkywall.services.models.TransactionMonthSummary;
@@ -19,11 +21,13 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountService accountService;
     private final CategoryRepository categoryRepository;
+    private final UserService userService;
 
-    public TransactionService(TransactionRepository transactionRepository, AccountService accountService, CategoryRepository categoryRepository) {
+    public TransactionService(TransactionRepository transactionRepository, AccountService accountService, CategoryRepository categoryRepository, UserService userService) {
         this.transactionRepository = transactionRepository;
         this.accountService = accountService;
         this.categoryRepository = categoryRepository;
+        this.userService = userService;
     }
 
     @Transactional

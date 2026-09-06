@@ -34,13 +34,14 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler)
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/error", "/Frontend/**").permitAll()
                         .requestMatchers(
                                 "/api/user/identifier/**",
                                 "/api/user/current",
                                 "/api/account/**",
                                 "/api/transaction/**",
-                                "/api/contacts/**"
+                                "/api/contacts/**",
+                                "/api/dashboard/**"
                         ).authenticated()
                         .requestMatchers("/api/user/**").hasRole("ADMIN")
                 )

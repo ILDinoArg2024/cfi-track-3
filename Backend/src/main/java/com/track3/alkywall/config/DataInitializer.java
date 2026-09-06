@@ -11,7 +11,6 @@ import com.track3.alkywall.repositories.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
@@ -22,8 +21,7 @@ public class DataInitializer {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             CategoryRepository categoryRepository,
-            PaymentMethodRepository paymentMethodRepository,
-            JdbcTemplate jdbcTemplate
+            PaymentMethodRepository paymentMethodRepository
     ) {
         return args -> {
             if(roleRepository.count() == 0){

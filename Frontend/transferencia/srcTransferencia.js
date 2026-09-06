@@ -52,9 +52,11 @@ const transferir = async (newTransferRequest) => {
     }
     catch (error) {
         console.error(error);
-        return null;
+        return error.response || null;
     }
 };
+
+const MENSAJE_ERROR_TRANSFERENCIA_DEFAULT = 'No pudimos enviar el dinero. Verificá tener saldo suficiente e intentá nuevamente.';
 
 // Trae los contactos guardados
 const getContactos = async () => {
@@ -196,7 +198,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Clic en Buscar (Asumimos que es un Alias/CBU NUEVO)
     btnBuscar.addEventListener('click', async () => {
-        destinatarioActual = await getUserDataByAliasOrCvu(inputDestinatario.value.trim());
+        const busqueda = inputDestinatario.value.trim();
+        const usuarioDestino = await getUserDataByAliasOrCvu(busqueda);
+        if (!usuarioDestino) return;
+
+        destinatarioActual = usuarioDestino;
+        destinatarioActual.esNuevo = true;
         llenarFichaPaso2();
         mostrarPaso(2);
     });
@@ -342,7 +349,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const newTransferRequest = new NewTransferRequest(
             usuarioActual.account.accountNumber,
-            destinatarioActual.account.accountNumber, 
+            destinatarioActual.account.accountNumber,
             montoActual,
             "varios"
         );
@@ -350,6 +357,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!transferencia || (transferencia.status != 201 && transferencia.status != 200)) {
             // En caso de error
             mostrarPaso(5);
+            const mensajeErrorEl = document.getElementById('mensajeErrorTransferencia');
+            if (mensajeErrorEl) {
+                mensajeErrorEl.innerText = transferencia?.data?.message || MENSAJE_ERROR_TRANSFERENCIA_DEFAULT;
+            }
             const contenedorLottieFail = document.getElementById('lottieFail');
             if (contenedorLottieFail) {
                 contenedorLottieFail.innerHTML = '';

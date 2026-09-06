@@ -58,7 +58,7 @@ public class AccountService {
     }
 
     private String generateAlias(String email){
-        String[] words = {"sol", "luna", "hoja", "caballo", "vaca", "gato", "perro"};
+        String[] words = {"sol", "luna", "hoja", "lago", "nube", "rama", "cielo"};
         String emailStart = email.substring(0, email.indexOf("@"));
 
         return
