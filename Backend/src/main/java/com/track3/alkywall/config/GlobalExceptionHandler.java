@@ -61,11 +61,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(false, exception.getMessage()));
     }
 
-    @ExceptionHandler(AccountNotOwnedByUserException.class)
-    public ResponseEntity<ApiResponse> accountNotOwnedByUserException(AccountNotOwnedByUserException exception){
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false, exception.getMessage()));
-    }
-
     // Redirige a la pagina 404 si la ruta no existe
     @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
     public Object handleNoResourceFound(

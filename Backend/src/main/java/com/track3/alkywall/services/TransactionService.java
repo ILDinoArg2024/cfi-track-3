@@ -3,10 +3,12 @@ package com.track3.alkywall.services;
 import com.track3.alkywall.config.exceptions.InsufficientFundsException;
 import com.track3.alkywall.config.exceptions.InvalidTransferException;
 import com.track3.alkywall.config.exceptions.NotFoundException;
+import com.track3.alkywall.controllers.models.TopDestinationContactResponse;
 import com.track3.alkywall.models.Account;
 import com.track3.alkywall.models.Category;
 import com.track3.alkywall.models.Transaction;
 import com.track3.alkywall.models.Transfer;
+import com.track3.alkywall.models.User;
 import com.track3.alkywall.repositories.CategoryRepository;
 import com.track3.alkywall.repositories.TransactionRepository;
 import com.track3.alkywall.services.models.TransactionMonthSummary;
@@ -16,7 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -116,5 +121,43 @@ public class TransactionService {
         return transactionRepository.getMonthSummaryByAccountId(
                 userService.getUserByEmail(authenticatedUserEmail).account().getId()
         );
+    }
+
+    public List<TopDestinationContactResponse> getTopDestinationContacts(String currentUserEmail) {
+        Long accountId = userService.getUserByEmail(currentUserEmail).account().getId();
+        List<Transfer> transfers = transactionRepository.findSentTransfersByAccountId(accountId);
+
+        Map<DestinationContact, List<Transfer>> transfersByContact = transfers.stream()
+                .collect(Collectors.groupingBy(DestinationContact::from));
+
+        return transfersByContact.entrySet().stream()
+                .sorted(Map.Entry.<DestinationContact, List<Transfer>>comparingByValue(Comparator.comparingInt(List::size)).reversed())
+                .limit(3)
+                .map(entry -> {
+                    DestinationContact contact = entry.getKey();
+                    List<Transfer> contactTransfers = entry.getValue();
+                    BigDecimal lastTransferAmount = contactTransfers.stream()
+                            .max(Comparator.comparing(Transaction::getCreatedAt))
+                            .map(Transaction::getAmount)
+                            .orElse(null);
+
+                    return new TopDestinationContactResponse(
+                            contact.firstName(),
+                            contact.lastName(),
+                            contact.accountNumber(),
+                            contact.alias(),
+                            (long) contactTransfers.size(),
+                            lastTransferAmount
+                    );
+                })
+                .toList();
+    }
+
+    private record DestinationContact(String firstName, String lastName, String accountNumber, String alias) {
+        static DestinationContact from(Transfer transfer) {
+            Account destinationAccount = transfer.getRelatedAccount();
+            User destinationUser = destinationAccount.getUser();
+            return new DestinationContact(destinationUser.getFirstName(), destinationUser.getLastName(), destinationAccount.getAccountNumber(), destinationAccount.getAlias());
+        }
     }
 }
