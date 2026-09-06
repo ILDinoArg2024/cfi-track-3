@@ -340,17 +340,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Control del acordeón
         let expandido = false;
+        contenedorBarras.onclick = (e) => e.stopPropagation();
+
         tarjetaAnalisisGastos.onclick = () => {
             expandido = !expandido;
             if (expandido) {
                 iconoAcordeonGastos.classList.add('rotate-180');
-                contenedorBarras.classList.remove('max-h-0', 'opacity-0', 'mt-0');
-                contenedorBarras.classList.add('max-h-[500px]', 'opacity-100', 'mt-4');
+                contenedorBarras.classList.remove('max-h-0', 'opacity-0', 'mt-0', 'overflow-hidden');
+                contenedorBarras.classList.add('max-h-[200px]', 'opacity-100', 'mt-4', 'overflow-y-auto');
                 barraSegmentadaGastos.classList.add('hidden');
             } else {
                 iconoAcordeonGastos.classList.remove('rotate-180');
-                contenedorBarras.classList.add('max-h-0', 'opacity-0', 'mt-0');
-                contenedorBarras.classList.remove('max-h-[500px]', 'opacity-100', 'mt-4');
+                contenedorBarras.classList.add('max-h-0', 'opacity-0', 'mt-0', 'overflow-hidden');
+                contenedorBarras.classList.remove('max-h-[200px]', 'opacity-100', 'mt-4', 'overflow-y-auto');
                 setTimeout(() => barraSegmentadaGastos.classList.remove('hidden'), 300);
             }
         };
