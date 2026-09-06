@@ -8,9 +8,6 @@ import java.math.BigDecimal;
 
 public record NewTransferRequest(
         @NotNull
-        String sourceAccountNumber,
-
-        @NotNull
         @Positive
         BigDecimal amount,
 

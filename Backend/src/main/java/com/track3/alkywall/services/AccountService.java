@@ -1,8 +1,6 @@
 package com.track3.alkywall.services;
 
-import com.track3.alkywall.config.exceptions.AccountNotOwnedByUserException;
 import com.track3.alkywall.config.exceptions.AlreadyExistsException;
-import com.track3.alkywall.config.exceptions.InvalidTransferException;
 import com.track3.alkywall.config.exceptions.NotFoundException;
 import com.track3.alkywall.controllers.models.AccountDTO;
 import com.track3.alkywall.models.Account;

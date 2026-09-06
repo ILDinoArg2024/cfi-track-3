@@ -33,7 +33,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler)
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/error", "/Frontend/**").permitAll()
                         .requestMatchers(
                                 "/api/user/identifier/**",
                                 "/api/user/current",

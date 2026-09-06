@@ -2,13 +2,11 @@ package com.track3.alkywall.controllers;
 
 import com.track3.alkywall.config.ApiResponse;
 import com.track3.alkywall.config.DataApiResponse;
-import com.track3.alkywall.controllers.models.TransferResponse;
 import com.track3.alkywall.controllers.models.UserResponse;
 import com.track3.alkywall.controllers.models.UserUpdateRequest;
 import com.track3.alkywall.services.UserService;
 import com.track3.alkywall.services.models.DomainUser;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;

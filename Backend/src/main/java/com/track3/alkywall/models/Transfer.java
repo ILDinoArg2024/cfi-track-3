@@ -5,26 +5,24 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Table(name = "transfers")
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
-public class Transfer {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Transfer extends Transaction {
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "related_account_id")
+    private Account relatedAccount; // Cuenta relacionada, puede ser el emisor o receptor
 
-    @OneToOne(optional = false)
-    @JoinColumn(name = "source_transaction_id")
-    private Transaction sourceTransaction;
+    @Column(nullable = false)
+    private String description;
 
-    @OneToOne(optional = false)
-    @JoinColumn(name = "destination_transaction_id")
-    private Transaction destinationTransaction;
-
-    public Transfer(Transaction sourceTransaction, Transaction destinationTransaction) {
-        this.sourceTransaction = sourceTransaction;
-        this.destinationTransaction = destinationTransaction;
+    public Transfer(BigDecimal amount, String type, String status, String description, Account account, Category category, Account relatedAccount) {
+        super(amount, type, status, account, category);
+        this.relatedAccount = relatedAccount;
+        this.description = description;
     }
 }
