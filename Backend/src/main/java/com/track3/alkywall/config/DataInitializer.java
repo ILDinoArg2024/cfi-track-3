@@ -26,8 +26,16 @@ public class DataInitializer {
             JdbcTemplate jdbcTemplate
     ) {
         return args -> {
-            // Asegura que la columna category exista en la tabla payments
+            // Ajusta columnas en las tablas si faltan
             try {
+                jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS account_id BIGINT;");
+                jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS category_id BIGINT;");
+                jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS status VARCHAR(255);");
+                jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS type VARCHAR(255);");
+                jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS created_at TIMESTAMP;");
+                jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS amount NUMERIC(38,2);");
+                jdbcTemplate.execute("ALTER TABLE transfers ADD COLUMN IF NOT EXISTS related_account_id BIGINT;");
+                jdbcTemplate.execute("ALTER TABLE transfers ADD COLUMN IF NOT EXISTS description VARCHAR(255);");
                 jdbcTemplate.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS category VARCHAR(50);");
             } catch (Exception ignored) {}
 
