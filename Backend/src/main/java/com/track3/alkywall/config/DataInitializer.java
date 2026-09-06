@@ -11,39 +11,19 @@ import com.track3.alkywall.repositories.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class DataInitializer {
     @Bean
-    public CommandLineRunner initRolesAndCategories(
+    public CommandLineRunner initDatabase(
             RoleRepository roleRepository,
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             CategoryRepository categoryRepository,
-            PaymentMethodRepository paymentMethodRepository,
-            JdbcTemplate jdbcTemplate
+            PaymentMethodRepository paymentMethodRepository
     ) {
         return args -> {
-            // Ajusta columnas en las tablas si faltan
-            try {
-                jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS account_id BIGINT;");
-                jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS category_id BIGINT;");
-                jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS status VARCHAR(255);");
-                jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS type VARCHAR(255);");
-                jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS created_at TIMESTAMP;");
-                jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS amount NUMERIC(38,2);");
-                jdbcTemplate.execute("ALTER TABLE transaction ALTER COLUMN description DROP NOT NULL;");
-                jdbcTemplate.execute("ALTER TABLE transaction ALTER COLUMN source_account_id DROP NOT NULL;");
-                jdbcTemplate.execute("ALTER TABLE transaction ALTER COLUMN destination_account_id DROP NOT NULL;");
-                jdbcTemplate.execute("ALTER TABLE transfers ADD COLUMN IF NOT EXISTS related_account_id BIGINT;");
-                jdbcTemplate.execute("ALTER TABLE transfers ADD COLUMN IF NOT EXISTS description VARCHAR(255);");
-                jdbcTemplate.execute("ALTER TABLE transfers ALTER COLUMN destination_transaction_id DROP NOT NULL;");
-                jdbcTemplate.execute("ALTER TABLE transfers ALTER COLUMN source_transaction_id DROP NOT NULL;");
-                jdbcTemplate.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS category VARCHAR(50);");
-            } catch (Exception ignored) {}
-
             if(roleRepository.count() == 0){
                 roleRepository.save(new Role("ADMIN"));
                 roleRepository.save(new Role("USER"));
@@ -61,18 +41,14 @@ public class DataInitializer {
                 ));
             }
 
-            if (categoryRepository.findByName("DEPOSIT").isEmpty()) {
+            if(categoryRepository.count() == 0){
                 categoryRepository.save(new Category("DEPOSIT"));
-            }
-            if (categoryRepository.findByName("TRANSFER").isEmpty()) {
                 categoryRepository.save(new Category("TRANSFER"));
-            }
-            if (categoryRepository.findByName("PAYMENT").isEmpty()) {
                 categoryRepository.save(new Category("PAYMENT"));
             }
 
             // Precarga del método de pago QR
-            if (paymentMethodRepository.findByName("QR").isEmpty()) {
+            if(paymentMethodRepository.count() == 0){
                 paymentMethodRepository.save(new PaymentMethod("QR"));
             }
         };

@@ -1,9 +1,11 @@
 package com.track3.alkywall.repositories;
 
 import com.track3.alkywall.models.Transaction;
+import com.track3.alkywall.models.Transfer;
 import com.track3.alkywall.services.models.TransactionMonthSummary;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -13,6 +15,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findAllByAccountIdOrderByCreatedAtDesc(Long accountId);
 
     List<Transaction> findAllByAccountIdAndTypeOrderByCreatedAtDesc(Long accountId, String type);
+
+    @Query("SELECT t FROM Transfer t WHERE t.account.id = :accountId AND t.type = 'DEBIT'")
+    List<Transfer> findSentTransfersByAccountId(@Param("accountId") Long accountId);
 
     // truncate(local_datetime, month) devuelve la fecha actual pero con el día 1
     @Query("""

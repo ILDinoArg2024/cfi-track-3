@@ -35,12 +35,9 @@ public class AccountService {
     }
 
     public Account getAccountByUserEmail(String userEmail){
-        Optional<Account> account = accountRepository.findByUserEmail(userEmail);
-        if(account.isPresent()){
-            return account.get();
-        } else{
-            throw new NotFoundException("No se pudo encontrar la cuenta");
-        }
+        return accountRepository.findByUserEmail(userEmail).orElseThrow(
+                () -> new NotFoundException("No se pudo encontrar la cuenta")
+        );
     }
 
     @Transactional
@@ -61,7 +58,7 @@ public class AccountService {
     }
 
     private String generateAlias(String email){
-        String[] words = {"sol", "luna", "hoja", "caballo", "vaca", "gato", "perro"};
+        String[] words = {"sol", "luna", "hoja", "lago", "nube", "rama", "cielo"};
         String emailStart = email.substring(0, email.indexOf("@"));
 
         return

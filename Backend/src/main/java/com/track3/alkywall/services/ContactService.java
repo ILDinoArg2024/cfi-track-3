@@ -3,16 +3,22 @@ package com.track3.alkywall.services;
 import com.track3.alkywall.config.exceptions.AlreadyExistsException;
 import com.track3.alkywall.config.exceptions.InvalidTransferException;
 import com.track3.alkywall.config.exceptions.NotFoundException;
-import com.track3.alkywall.models.Account;
-import com.track3.alkywall.models.Contact;
-import com.track3.alkywall.models.User;
+import com.track3.alkywall.controllers.models.TopDestinationContactResponse;
+import com.track3.alkywall.models.*;
 import com.track3.alkywall.repositories.ContactRepository;
+import com.track3.alkywall.repositories.TransactionRepository;
 import com.track3.alkywall.repositories.UserRepository;
+import com.track3.alkywall.services.models.DestinationContact;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -21,11 +27,15 @@ public class ContactService {
     private final ContactRepository contactRepository;
     private final UserRepository userRepository;
     private final AccountService accountService;
+    private final UserService userService;
+    private final TransactionRepository transactionRepository;
 
-    public ContactService(ContactRepository contactRepository, UserRepository userRepository, AccountService accountService) {
+    public ContactService(ContactRepository contactRepository, UserRepository userRepository, AccountService accountService, UserService userService, TransactionRepository transactionRepository) {
         this.contactRepository = contactRepository;
         this.userRepository = userRepository;
         this.accountService = accountService;
+        this.userService = userService;
+        this.transactionRepository = transactionRepository;
     }
 
     @Transactional
@@ -65,5 +75,18 @@ public class ContactService {
     @Transactional(readOnly = true)
     public List<Contact> getContactsByUser(String currentUserEmail) {
         return contactRepository.findByUserEmail(currentUserEmail);
+    }
+
+    public List<Map.Entry<DestinationContact, List<Transfer>>> getTopDestinationContacts(String currentUserEmail) {
+        Long accountId = userService.getUserByEmail(currentUserEmail).account().getId();
+        List<Transfer> transfers = transactionRepository.findSentTransfersByAccountId(accountId);
+
+        Map<DestinationContact, List<Transfer>> transfersByContact = transfers.stream()
+                .collect(Collectors.groupingBy(DestinationContact::from));
+
+        return transfersByContact.entrySet().stream()
+                .sorted(Map.Entry.<DestinationContact, List<Transfer>>comparingByValue(Comparator.comparingInt(List::size)).reversed())
+                .limit(3)
+                .toList();
     }
 }

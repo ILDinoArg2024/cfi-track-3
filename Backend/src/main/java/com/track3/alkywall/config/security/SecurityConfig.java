@@ -40,7 +40,8 @@ public class SecurityConfig {
                                 "/api/user/current",
                                 "/api/account/**",
                                 "/api/transaction/**",
-                                "/api/contacts/**"
+                                "/api/contacts/**",
+                                "/api/dashboard/**"
                         ).authenticated()
                         .requestMatchers("/api/user/**").hasRole("ADMIN")
                 )

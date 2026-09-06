@@ -1,22 +1,19 @@
 package com.track3.alkywall.services;
 
 import com.track3.alkywall.config.exceptions.InvalidTransferException;
-import com.track3.alkywall.controllers.models.CategoryExpenseDTO;
-import com.track3.alkywall.controllers.models.PaymentResponse;
+import com.track3.alkywall.config.exceptions.NotFoundException;
 import com.track3.alkywall.models.*;
+import com.track3.alkywall.repositories.CategoryRepository;
 import com.track3.alkywall.repositories.PaymentMethodRepository;
 import com.track3.alkywall.repositories.PaymentRepository;
+import com.track3.alkywall.services.models.PaymentCategoryExpenses;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -25,38 +22,35 @@ public class PaymentService {
     private final PaymentMethodRepository paymentMethodRepository;
     private final TransactionService transactionService;
     private final AccountService accountService;
+    private final CategoryRepository categoryRepository;
 
     public PaymentService(
             PaymentRepository paymentRepository,
             PaymentMethodRepository paymentMethodRepository,
             TransactionService transactionService,
-            AccountService accountService
+            AccountService accountService,
+            CategoryRepository categoryRepository
     ) {
         this.paymentRepository = paymentRepository;
         this.paymentMethodRepository = paymentMethodRepository;
         this.transactionService = transactionService;
         this.accountService = accountService;
+        this.categoryRepository = categoryRepository;
     }
 
     // Procesa y guarda un nuevo pago
     @Transactional
-    public PaymentResponse createPayment(
+    public Payment createPayment(
             String emailUserAuthenticated,
-            String sourceAccountNumber,
             String destinationAccountIdentifier,
             BigDecimal amount,
-            PaymentCategory category,
+            PaymentCategory paymentCategory,
             String customName
     ) {
-        log.info("Iniciando pago de cuentaOrigen={} a cuentaDestino={}, categoria={}",
-                sourceAccountNumber, destinationAccountIdentifier, category);
+        Account sourceAccount = accountService.getAccountByUserEmail(emailUserAuthenticated);
 
-        // Valida la cuenta de origen
-        Account sourceAccount = accountService.getAccountByAccountNumberOrAlias(sourceAccountNumber);
-        if (!sourceAccount.getUser().getEmail().equals(emailUserAuthenticated)) {
-            log.error("Número de cuenta={} no pertenece al usuario={}", sourceAccountNumber, emailUserAuthenticated);
-            throw new InvalidTransferException("El número de cuenta no está asociado con el usuario");
-        }
+        log.info("Iniciando pago de cuentaOrigen={} a cuentaDestino={}, categoria={}",
+                sourceAccount.getAccountNumber(), destinationAccountIdentifier, paymentCategory);
 
         // Valida la cuenta destino
         Account destinationAccount = accountService.getAccountByAccountNumberOrAlias(destinationAccountIdentifier);
@@ -65,67 +59,39 @@ public class PaymentService {
             throw new InvalidTransferException("No se puede realizar un pago a la misma cuenta");
         }
 
+        Category category = categoryRepository.findByName("PAYMENT").orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
+
         // Obtiene el método de pago QR
-        PaymentMethod paymentMethod = paymentMethodRepository.findByName("QR")
-                .orElseGet(() -> paymentMethodRepository.save(new PaymentMethod("QR")));
+        PaymentMethod paymentMethod = paymentMethodRepository.findByName("QR").orElseThrow(() -> new NotFoundException("El método de pago no existe"));
 
         // Determina el concepto del pago
-        PaymentCategory categoriaSegura = (category != null) ? category : PaymentCategory.OTROS;
+        if(paymentCategory == null) paymentCategory = PaymentCategory.OTROS;
         String paymentConcept = (customName != null && !customName.isBlank())
                 ? customName.trim()
-                : categoriaSegura.getDisplayName();
+                : paymentCategory.getDisplayName();
+
+        transactionService.modifyAccountBalance(sourceAccount, "DEBIT", amount);
+        transactionService.modifyAccountBalance(destinationAccount, "CREDIT", amount);
 
         // Registra los movimientos contables
-        Transaction sourceTransaction = transactionService.createTransaction(
-                sourceAccount, amount, "DEBIT", paymentConcept, "PAYMENT"
+        List<Payment> payments = new ArrayList<>(2);
+        payments.add(new Payment(
+                amount, "DEBIT", "COMPLETED", sourceAccount, category, paymentCategory, paymentConcept, paymentMethod, destinationAccount)
         );
-        transactionService.createTransaction(
-                destinationAccount, amount, "CREDIT", paymentConcept, "PAYMENT"
-        );
+
+        payments.add(new Payment(
+                amount, "CREDIT", "COMPLETED", destinationAccount, category, paymentCategory, paymentConcept, paymentMethod, sourceAccount
+        ));
 
         // Guarda el pago en la base de datos
-        Payment payment = paymentRepository.save(new Payment(categoriaSegura, paymentConcept, sourceTransaction, paymentMethod));
-
-        return PaymentResponse.from(payment, destinationAccount);
+        return paymentRepository.saveAll(payments).getFirst();
     }
 
     // Obtiene los gastos del mes agrupados por categoría
     @Transactional(readOnly = true)
-    public List<CategoryExpenseDTO> getMonthlyExpenses(String emailUserAuthenticated) {
-        Account account = accountService.getAccountByUserEmail(emailUserAuthenticated);
-        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
-
-        List<Payment> payments = paymentRepository.findByAccountIdAndCreatedAtAfter(account.getId(), startOfMonth);
-
-        if (payments.isEmpty()) {
-            return List.of();
-        }
-
-        BigDecimal total = payments.stream()
-                .map(p -> p.getTransaction().getAmount())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // Agrupa por categoría de forma segura
-        Map<PaymentCategory, BigDecimal> sumByCategory = payments.stream()
-                .collect(Collectors.groupingBy(
-                        p -> p.getCategory() != null ? p.getCategory() : PaymentCategory.OTROS,
-                        Collectors.reducing(BigDecimal.ZERO, p -> p.getTransaction().getAmount(), BigDecimal::add)
-                ));
-
-        return sumByCategory.entrySet().stream()
-                .map(entry -> {
-                    BigDecimal amount = entry.getValue();
-                    int percentage = (total.compareTo(BigDecimal.ZERO) > 0)
-                            ? amount.multiply(BigDecimal.valueOf(100)).divide(total, 0, RoundingMode.HALF_UP).intValue()
-                            : 0;
-                    return new CategoryExpenseDTO(
-                            entry.getKey().name(),
-                            entry.getKey().getDisplayName(),
-                            amount,
-                            percentage
-                    );
-                })
-                .sorted((a, b) -> b.amount().compareTo(a.amount()))
-                .toList();
+    public List<PaymentCategoryExpenses> getMonthlyExpenses(String emailUserAuthenticated) {
+        return paymentRepository.getMonthlyPaymentExpensesSummary(
+                accountService.getAccountByUserEmail(emailUserAuthenticated).getId()
+        );
     }
 }

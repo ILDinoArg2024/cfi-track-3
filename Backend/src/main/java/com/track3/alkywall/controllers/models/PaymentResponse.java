@@ -3,37 +3,26 @@ package com.track3.alkywall.controllers.models;
 import com.track3.alkywall.models.Account;
 import com.track3.alkywall.models.Payment;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 public record PaymentResponse(
-        Long id,
-        BigDecimal amount,
+        String categoryKey,
         String category,
         String name,
-        String paymentMethod,
-        String payerName,
-        String payerAccountNumber,
-        String receiverName,
-        String receiverAccountNumber,
-        LocalDateTime createdAt
+        String method,
+        String relatedFirstName,
+        String relatedLastName,
+        String relatedAccountNumber
 ) {
-    public static PaymentResponse from(Payment payment, Account receiverAccount) {
-        Account payerAccount = payment.getTransaction().getAccount();
-        String payerFullName = payerAccount.getUser().getFirstName() + " " + payerAccount.getUser().getLastName();
-        String receiverFullName = receiverAccount.getUser().getFirstName() + " " + receiverAccount.getUser().getLastName();
+    public static PaymentResponse from(Payment payment) {
+        Account relatedAccount = payment.getRelatedAccount();
 
         return new PaymentResponse(
-                payment.getId(),
-                payment.getTransaction().getAmount(),
-                payment.getCategory() != null ? payment.getCategory().getDisplayName() : payment.getName(),
+                payment.getPaymentCategory().name(),
+                payment.getPaymentCategory().getDisplayName(),
                 payment.getName(),
                 payment.getPaymentMethod().getName(),
-                payerFullName.trim(),
-                payerAccount.getAccountNumber(),
-                receiverFullName.trim(),
-                receiverAccount.getAccountNumber(),
-                payment.getTransaction().getCreatedAt()
+                relatedAccount.getUser().getFirstName(),
+                relatedAccount.getUser().getLastName(),
+                relatedAccount.getAccountNumber()
         );
     }
 }

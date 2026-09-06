@@ -34,6 +34,10 @@ async function onInit(event) {
         if (accountData) {
             mostrarInfo(accountData);
         }
+        let contactosFrecuentes = await getContactosFrecuentes();
+        if (contactosFrecuentes) {
+            cargarContactosFrecuentes(contactosFrecuentes);
+        }
     } else {
         // window.location.href = "../login/indexLogin.html"; // Comentado temporalmente si se quiere ver el mockup
     }
@@ -57,6 +61,18 @@ const getAccount = async () => {
     }
     catch (error) {
         // window.location.href= "../login/indexLogin.html";
+        console.error(error);
+        return null;
+    }
+}
+
+const getContactosFrecuentes = async () => {
+    if (!axiosInstance) return null;
+    try {
+        const response = await axiosInstance.get("/dashboard/frecuentes");
+        return response.data.data;
+    }
+    catch (error) {
         console.error(error);
         return null;
     }
@@ -105,68 +121,57 @@ function ocultarMensaje(elemento) {
 // L�GICA DE UI (NUESTRA)
 // ==========================================
 /**
- * Hola, hola! acá hay un ejemplo de cómo generar los componentes dinámicamente
- * cuando leas los datos desde el Backend
- *
- * Actualmente los datos están hardcodeados
- * para que podamos ver y ajustar el diseño.
- * Cuando conectes los datos reales, los borramos
- *
- * CONTACTOS RECIENTES
+ * CONTACTOS FRECUENTES
  * ---------------------------------------------------------------------------
- * function cargarContactosRecientes(contactosBD) {
- *     const contenedor = document.getElementById('listaContactos');
- *     
- *     contactosBD.forEach(contacto => {
- *         const tarjetaHTML = `
- *             <button class="min-w-[76px] h-[92px] rounded-[20px] bg-white border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition">
- *                 <div class="w-[38px] h-[38px] rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shadow-inner">
- *                     ${contacto.iniciales}
- *                 </div>
- *                 <span class="text-[10px] text-slate-600 font-semibold">${contacto.nombre}</span>
- *             </button>
- *         `;
- *         contenedor.innerHTML += tarjetaHTML;
- *     });
- * }
+ * Datos reales desde GET /api/dashboard/frecuentes (top 3 destinatarios por
+ * cantidad de transferencias enviadas). Se inyectan a continuación del botón
+ * "Nueva Cuenta" que ya vive en el HTML.
  */
+function cargarContactosFrecuentes(contactosBD) {
+    const contenedor = document.getElementById('listaContactos');
+    if (!contenedor) return;
 
-/**
- * ----------------------------------------------------------------------------
- * HISTORIAL DE MOVIMIENTOS
- * ----------------------------------------------------------------------
- * function cargarMovimientos(movimientosBD) {
- *     const contenedor = document.getElementById('listaMovimientos');
- *     
- *     movimientosBD.forEach(mov => {
- *         // Pequeña lógica para diferenciar ingresos de egresos
- *         const esIngreso = mov.monto > 0;
- *         const colorMonto = esIngreso ? 'text-blue-600' : 'text-slate-800';
- *         const signo = esIngreso ? '+' : '-';
- *         const montoFormateado = Math.abs(mov.monto).toLocaleString('es-AR', { minimumFractionDigits: 2 });
- *         
- *         const movimientoHTML = `
- *             <div class="p-4 rounded-[20px] bg-white border border-slate-200 shadow-sm flex items-center justify-between hover:bg-slate-50 transition cursor-pointer">
- *                 <div class="flex items-center gap-3">
- *                     <!-- En un caso real, los colores e íconos dependerán de la categoría del movimiento -->
- *                     <div class="w-10 h-10 rounded-full border border-slate-100 flex items-center justify-center text-slate-500 bg-slate-50">
- *                         <i class="${mov.iconoClase} text-sm"></i>
- *                     </div>
- *                     <div>
- *                         <p class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
- *                             ${mov.titulo} <span class="w-1 h-1 bg-slate-400 rounded-full"></span>
- *                         </p>
- *                         <p class="text-[10px] text-slate-500 mt-0.5">${mov.descripcion}</p>
- *                     </div>
- *                 </div>
- *                 <span class="text-xs font-bold ${colorMonto} tracking-wide">${signo} $ ${montoFormateado}</span>
- *             </div>
- *         `;
- *         
- *         contenedor.innerHTML += movimientoHTML;
- *     });
- * }
- */
+    contactosBD.forEach(contacto => {
+        const iniciales = (contacto.firstName.charAt(0) + contacto.lastName.charAt(0)).toUpperCase();
+        const nombre = `${contacto.firstName} ${contacto.lastName.charAt(0)}.`;
+        const identificador = contacto.alias || contacto.accountNumber;
+
+        const tarjetaHTML = `
+            <a href="../transferencia/indexTransferencia.html?alias=${encodeURIComponent(identificador)}&nombre=${encodeURIComponent(nombre)}" class="min-w-[64px] h-[80px] rounded-[20px] bg-white border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition page-transition">
+                <div class="w-[32px] h-[32px] rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shadow-inner">
+                    ${iniciales}
+                </div>
+                <span class="text-[10px] text-slate-600 font-semibold">${nombre}</span>
+            </a>
+        `;
+        contenedor.insertAdjacentHTML('beforeend', tarjetaHTML);
+    });
+}
+
+import {obtenerMovimientosHTML} from "../historial/srcHistorial.js";
+const listaMovimientos = document.getElementById('listaMovimientos');
+const msgHistorialVacio = document.getElementById('msgHistorialVacio');
+
+async function renderizarMovimientos(){
+    if (!listaMovimientos || !msgHistorialVacio) return;
+
+    listaMovimientos.innerHTML = '';
+
+    let movimientosHTML = await obtenerMovimientosHTML(null, false, 15);
+
+    if (movimientosHTML === "") {
+        // Mostrar mensaje vacío
+        msgHistorialVacio.classList.remove('hidden');
+        msgHistorialVacio.classList.add('flex');
+        listaMovimientos.classList.add('hidden');
+    } else {
+        listaMovimientos.innerHTML = movimientosHTML;
+        // Ocultar mensaje vacío
+        msgHistorialVacio.classList.add('hidden');
+        msgHistorialVacio.classList.remove('flex');
+        listaMovimientos.classList.remove('hidden');
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -455,7 +460,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const saldoStr = nuevoSaldo.toLocaleString('es-AR', { minimumFractionDigits: 2 });
                 const [enteros, decimales] = saldoStr.split(',');
                 saldoTotalElement.innerHTML = `$ ${enteros}<span class="text-xl opacity-80" id="saldoDecimales">,${decimales}</span>`;
-
             }, 1500);
         });
 
@@ -468,4 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
+    // Historial de movimientos
+    renderizarMovimientos();
 });
