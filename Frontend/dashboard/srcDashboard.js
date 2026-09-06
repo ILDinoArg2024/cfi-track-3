@@ -234,9 +234,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    // ANÁLISIS DE GASTOS
+    // Mapa de colores e iconos por categoría
+    const ESTILOS_CATEGORIAS = {
+        'SUPERMERCADO': { colorClass: 'bg-indigo-500', icon: 'fa-cart-shopping', iconBg: 'bg-indigo-50', iconColor: 'text-indigo-500' },
+        'COMIDA': { colorClass: 'bg-orange-500', icon: 'fa-burger', iconBg: 'bg-orange-50', iconColor: 'text-orange-500' },
+        'TRANSPORTE': { colorClass: 'bg-sky-500', icon: 'fa-car', iconBg: 'bg-sky-50', iconColor: 'text-sky-500' },
+        'SERVICIOS': { colorClass: 'bg-emerald-500', icon: 'fa-bolt', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-500' },
+        'ENTRETENIMIENTO': { colorClass: 'bg-pink-500', icon: 'fa-ticket', iconBg: 'bg-pink-50', iconColor: 'text-pink-500' },
+        'FARMACIA_SALUD': { colorClass: 'bg-rose-500', icon: 'fa-heart-pulse', iconBg: 'bg-rose-50', iconColor: 'text-rose-500' },
+        'INDUMENTARIA': { colorClass: 'bg-purple-500', icon: 'fa-shirt', iconBg: 'bg-purple-50', iconColor: 'text-purple-500' },
+        'OTROS': { colorClass: 'bg-slate-500', icon: 'fa-box-archive', iconBg: 'bg-slate-50', iconColor: 'text-slate-500' }
+    };
 
-    const renderizarAnalisisGastos = () => {
+    // Renderiza el análisis de gastos con los datos reales del usuario
+    const renderizarAnalisisGastos = async () => {
         const contenedorBarras = document.getElementById('contenedorBarrasGastos');
         const barraSegmentadaGastos = document.getElementById('barraSegmentadaGastos');
         const textoTotalGastos = document.getElementById('textoTotalGastos');
@@ -245,36 +256,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!contenedorBarras || !barraSegmentadaGastos) return;
 
-        // DATOS SIMULADOS DEL BACKEND
-        const datosAgrupadosSimulados = [
-            { categoria: 'Supermercado', monto: 45000, colorClass: 'bg-indigo-500', icon: 'fa-cart-shopping', iconBg: 'bg-indigo-50', iconColor: 'text-indigo-500' },
-            { categoria: 'Transporte', monto: 15000, colorClass: 'bg-sky-500', icon: 'fa-car', iconBg: 'bg-sky-50', iconColor: 'text-sky-500' },
-            { categoria: 'Comida', monto: 10000, colorClass: 'bg-orange-500', icon: 'fa-burger', iconBg: 'bg-orange-50', iconColor: 'text-orange-500' }
-        ];
+        let listaGastos = [];
+        const token = localStorage.getItem('token');
 
-        const totalGastos = datosAgrupadosSimulados.reduce((acc, item) => acc + item.monto, 0);
+        if (token) {
+            try {
+                const res = await fetch('http://localhost:8080/api/transaction/payment/expenses/month', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.data) {
+                        listaGastos = data.data;
+                    }
+                }
+            } catch (err) {
+                console.error('Error al cargar gastos del mes:', err);
+            }
+        }
+
+        // Si aún no hay gastos reales registrados en el mes
+        if (listaGastos.length === 0) {
+            tarjetaAnalisisGastos.classList.remove('cursor-pointer');
+            tarjetaAnalisisGastos.onclick = null;
+            tarjetaAnalisisGastos.innerHTML = `
+                <div class="w-full p-4 flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 text-sm shrink-0">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-slate-800">Sin gastos registrados este mes</span>
+                        <span class="text-[11px] font-medium text-slate-400">Tus pagos aparecerán categorizados aquí.</span>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const totalGastos = listaGastos.reduce((acc, item) => acc + parseFloat(item.amount), 0);
         textoTotalGastos.innerText = `Total: $ ${totalGastos.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
 
         contenedorBarras.innerHTML = '';
         barraSegmentadaGastos.innerHTML = '';
 
-        datosAgrupadosSimulados.forEach((item) => {
-            const porcentaje = totalGastos > 0 ? Math.round((item.monto / totalGastos) * 100) : 0;
-            const montoFormateado = item.monto.toLocaleString('es-AR', { minimumFractionDigits: 2 });
+        listaGastos.forEach((item) => {
+            const estilo = ESTILOS_CATEGORIAS[item.category] || ESTILOS_CATEGORIAS['OTROS'];
+            const porcentaje = item.percentage;
+            const montoFormateado = parseFloat(item.amount).toLocaleString('es-AR', { minimumFractionDigits: 2 });
 
-            //Inyectar segmento en la barra principal
-            const segmentoHTML = `<div class="h-full ${item.colorClass} transition-all duration-1000 ease-out" style="width: 0%;" data-target-width="${porcentaje}%"></div>`;
+            // Inyecta el segmento en la barra principal
+            const segmentoHTML = `<div class="h-full ${estilo.colorClass} transition-all duration-1000 ease-out" style="width: 0%;" data-target-width="${porcentaje}%"></div>`;
             barraSegmentadaGastos.insertAdjacentHTML('beforeend', segmentoHTML);
 
-            //Inyectar barra individual detallada
+            // Inyecta la barra individual detallada
             const barraIndividualHTML = `
                 <div class="flex flex-col gap-2 group">
                     <div class="flex justify-between items-end">
                         <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 rounded-full ${item.iconBg} ${item.iconColor} flex items-center justify-center text-[10px]">
-                                <i class="fa-solid ${item.icon}"></i>
+                            <div class="w-6 h-6 rounded-full ${estilo.iconBg} ${estilo.iconColor} flex items-center justify-center text-[10px]">
+                                <i class="fa-solid ${estilo.icon}"></i>
                             </div>
-                            <span class="text-xs font-bold text-slate-700">${item.categoria}</span>
+                            <span class="text-xs font-bold text-slate-700">${item.displayName}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="text-[10px] font-bold text-slate-400">$ ${montoFormateado}</span>
@@ -282,38 +324,36 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                     <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full ${item.colorClass} rounded-full transition-all duration-1000 ease-out" style="width: 0%;" data-target-width="${porcentaje}%"></div>
+                        <div class="h-full ${estilo.colorClass} rounded-full transition-all duration-1000 ease-out" style="width: 0%;" data-target-width="${porcentaje}%"></div>
                     </div>
                 </div>
             `;
             contenedorBarras.insertAdjacentHTML('beforeend', barraIndividualHTML);
         });
 
-        // Animar anchos
+        // Anima las barras
         setTimeout(() => {
             document.querySelectorAll('#seccionAnalisisGastos [data-target-width]').forEach(barra => {
                 barra.style.width = barra.getAttribute('data-target-width');
             });
         }, 100);
 
-        // Lógica del acordeón
+        // Control del acordeón
         let expandido = false;
-        tarjetaAnalisisGastos.addEventListener('click', () => {
+        tarjetaAnalisisGastos.onclick = () => {
             expandido = !expandido;
             if (expandido) {
-                // Expandir
                 iconoAcordeonGastos.classList.add('rotate-180');
                 contenedorBarras.classList.remove('max-h-0', 'opacity-0', 'mt-0');
                 contenedorBarras.classList.add('max-h-[500px]', 'opacity-100', 'mt-4');
-                barraSegmentadaGastos.classList.add('hidden'); // Ocultar barra segmentada
+                barraSegmentadaGastos.classList.add('hidden');
             } else {
-                // Contraer
                 iconoAcordeonGastos.classList.remove('rotate-180');
                 contenedorBarras.classList.add('max-h-0', 'opacity-0', 'mt-0');
                 contenedorBarras.classList.remove('max-h-[500px]', 'opacity-100', 'mt-4');
                 setTimeout(() => barraSegmentadaGastos.classList.remove('hidden'), 300);
             }
-        });
+        };
     };
 
     renderizarAnalisisGastos();

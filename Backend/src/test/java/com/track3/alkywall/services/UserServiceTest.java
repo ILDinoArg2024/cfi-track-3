@@ -64,7 +64,7 @@ public class UserServiceTest {
     void shouldUpdateUser(){ // Actualiza rol, email y dni
         User user = new User("", "", "old@gmail.com", "password", "oldDni", new Role("USER"));
         user.setId(1L);
-        DomainUser newUser = new DomainUser(user.getId(), "firstName", "lastName", "new@gmail.com", "newDni", new Role("ADMIN"), false, user.getCreatedAt());
+        DomainUser newUser = new DomainUser(user.getId(), "firstName", "lastName", "new@gmail.com", "newDni", new Role("ADMIN"), false, user.getCreatedAt(), null);
 
         when(userRepository.findById(newUser.id())).thenReturn(Optional.of(user));
         when(roleRepository.findByName(newUser.role().getName())).thenReturn(Optional.of(new Role("ADMIN")));
@@ -87,7 +87,7 @@ public class UserServiceTest {
 
     @Test
     void shouldNotUpdateUserNotFound(){
-        DomainUser newUser = new DomainUser(1L, "", "", "", "", new Role("ADMIN"), true, LocalDateTime.now());
+        DomainUser newUser = new DomainUser(1L, "", "", "", "", new Role("ADMIN"), true, LocalDateTime.now(), null);
         when(userRepository.findById(newUser.id())).thenThrow(NotFoundException.class);
 
         assertThrows(NotFoundException.class, () -> userService.update(newUser));
@@ -97,6 +97,6 @@ public class UserServiceTest {
     @Test
     void shouldDeleteUser(){
         userService.delete(1L);
-        verify(userRepository).updateIsActiveById(1L, false);
+        verify(userRepository).deleteById(1L);
     }
 }

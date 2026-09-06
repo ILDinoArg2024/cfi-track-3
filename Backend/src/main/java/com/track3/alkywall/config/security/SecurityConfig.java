@@ -26,6 +26,7 @@ public class SecurityConfig {
             JwtAccessDeniedHandler accessDeniedHandler
     ) throws Exception{
         http
+                .cors(org.springframework.security.config.Customizer.withDefaults())
                 .csrf(CsrfConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(e -> e

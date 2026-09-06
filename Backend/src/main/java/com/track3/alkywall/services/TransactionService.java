@@ -74,6 +74,9 @@ public class TransactionService {
         modifyAccountBalance(sourceAccount, "DEBIT", amount);
         modifyAccountBalance(destinationAccount, "CREDIT", amount);
 
+        accountService.updateAccountBalance(sourceAccount.getId(), sourceAccount.getBalance());
+        accountService.updateAccountBalance(destinationAccount.getId(), destinationAccount.getBalance());
+
         List<Transfer> transfers = new ArrayList<>(2);
 
         transfers.add(new Transfer(amount, "DEBIT", "COMPLETED", description, sourceAccount, category, destinationAccount));
@@ -83,6 +86,15 @@ public class TransactionService {
         transfers = transactionRepository.saveAll(transfers);
 
         return transfers.getFirst();
+    }
+
+    @Transactional
+    public Transaction createTransaction(Account account, BigDecimal amount, String type, String status, String categoryName) {
+        modifyAccountBalance(account, type, amount);
+        Category category = categoryRepository.findByName(categoryName)
+                .orElseGet(() -> categoryRepository.save(new Category(categoryName)));
+        accountService.updateAccountBalance(account.getId(), account.getBalance());
+        return transactionRepository.save(new Transaction(amount, type, status, account, category));
     }
 
     private void modifyAccountBalance(Account account, String type, BigDecimal amount){

@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AlkyWall - Pagar con QR</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         
-        /* Animación general de entrada de pantalla */
         .fade-in {
             animation: fadeInScreen 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
@@ -19,11 +19,10 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Línea láser del escáner */
         .laser-line {
             width: 100%;
             height: 2px;
-            background: #3b82f6; /* bg-blue-500 */
+            background: #3b82f6;
             box-shadow: 0 0 10px #3b82f6, 0 0 20px #3b82f6;
             position: absolute;
             top: 0;
@@ -38,7 +37,6 @@
             100% { top: 100%; opacity: 0; }
         }
 
-        /* Esquinas del visor QR */
         .corner {
             position: absolute;
             width: 40px;
@@ -57,10 +55,9 @@
 
         @keyframes successPulse {
             0% { transform: scale(1); border-color: white; }
-            50% { transform: scale(1.05); border-color: #22c55e; } /* green-500 */
+            50% { transform: scale(1.05); border-color: #22c55e; }
             100% { transform: scale(1); border-color: #22c55e; }
         }
-
     </style>
 </head>
 <body class="bg-slate-900 flex items-center justify-center h-[100dvh] overflow-hidden md:h-screen md:overflow-auto opacity-0 transition-opacity duration-100 ease-in-out">
@@ -73,13 +70,13 @@
                 <button id="btnVolver" class="w-10 h-10 rounded-xl bg-slate-800/80 backdrop-blur-md flex items-center justify-center hover:bg-slate-700 transition" onclick="history.back()">
                     <i class="fa-solid fa-chevron-left"></i>
                 </button>
-                <span class="text-base font-extrabold">Escanear QR</span>
+                <span class="text-base font-extrabold">Pagar con QR</span>
                 <div class="w-10 h-10 rounded-xl bg-slate-800/80 backdrop-blur-md flex items-center justify-center">
                     <i class="fa-regular fa-lightbulb text-slate-300"></i>
                 </div>
             </header>
 
-            <!-- Área de escaneo simulada -->
+            <!-- Área de escaneo -->
             <div class="flex-1 flex flex-col items-center justify-center relative px-8">
                 <!-- Visor -->
                 <div id="visorScanner" class="w-64 h-64 relative mb-10">
@@ -91,56 +88,116 @@
                     <!-- Láser animado -->
                     <div id="laser" class="laser-line"></div>
 
-                    <!-- Mensaje Éxito -->
-                    <div id="msgExito" class="absolute inset-0 flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
+                    <!-- Mensaje Éxito de Escaneo -->
+                    <div id="msgExitoEscaneo" class="absolute inset-0 flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300">
                         <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white text-3xl mb-2 shadow-[0_0_20px_rgba(34,197,94,0.6)]">
                             <i class="fa-solid fa-check"></i>
                         </div>
                     </div>
                 </div>
 
-                <p class="text-white text-center font-semibold text-sm">Apunta la cámara a un código QR</p>
-                <p class="text-slate-400 text-center font-medium text-xs mt-2">Buscando automáticamente...</p>
+                <p class="text-white text-center font-semibold text-sm">Apuntá la cámara al código QR</p>
+                <p class="text-slate-400 text-center font-medium text-xs mt-2">O cargá una imagen desde tu galería</p>
             </div>
             
-            <!-- Botón Inferior -->
+            <!-- Botón Inferior: Cargar imagen -->
             <div class="p-6 mt-auto">
-                <button class="w-full h-14 bg-slate-800 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2">
-                    <i class="fa-regular fa-image"></i> Cargar desde galería
+                <input type="file" id="inputSubirQR" accept="image/*" class="hidden">
+                <button id="btnCargarGaleria" class="w-full h-14 bg-slate-800 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-700 transition">
+                    <i class="fa-regular fa-image text-base"></i> Subir QR desde imagen
                 </button>
             </div>
 
         </div>
+
+        <!-- Modal de Confirmación de Pago -->
+        <div id="modalConfirmarPago" class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center hidden opacity-0 transition-opacity duration-300">
+            <div id="modalPagoContent" class="bg-white w-full rounded-t-[32px] p-6 shadow-2xl transform translate-y-full transition-transform duration-300 flex flex-col max-h-[90%] overflow-y-auto">
+                
+                <!-- Tirador superior -->
+                <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 shrink-0"></div>
+
+                <!-- Confirmación de Pago -->
+                <div id="vistaConfirmacion" class="flex flex-col items-center text-center">
+                    
+                    <div class="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 text-2xl mb-3 shadow-sm">
+                        <i id="iconoRubro" class="fa-solid fa-store"></i>
+                    </div>
+
+                    <h3 id="txtNombreComercio" class="text-lg font-extrabold text-slate-900 leading-tight mb-1">Comercio</h3>
+                    
+                    <div class="flex items-center gap-2 mb-4">
+                        <span id="badgeCategoriaPago" class="px-3 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Comida</span>
+                        <span id="txtDestinoPago" class="text-xs font-semibold text-slate-400">alias.destino</span>
+                    </div>
+
+                    <!-- Total a pagar -->
+                    <div class="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-4">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Monto a abonar</span>
+                        <span id="txtMontoPagar" class="text-3xl font-extrabold text-slate-900">$ 0,00</span>
+                    </div>
+
+                    <!-- Saldo del pagador -->
+                    <div class="w-full flex justify-between items-center px-1 mb-4 text-xs font-medium text-slate-500">
+                        <span>Tu saldo disponible:</span>
+                        <span id="txtSaldoDisponible" class="font-bold text-slate-800">$ 0,00</span>
+                    </div>
+
+                    <!-- Mensaje de Error -->
+                    <div id="boxErrorPago" class="w-full bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold rounded-xl p-3 mb-4 hidden text-left">
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="w-full flex flex-col gap-2">
+                        <button id="btnConfirmarPago" class="w-full h-14 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-2xl font-extrabold text-base shadow-[0_8px_20px_rgba(37,99,235,0.4)] transition hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                            <span>Confirmar y Pagar</span>
+                        </button>
+                        <button id="btnCancelarPago" class="w-full h-12 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition">
+                            Cancelar
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Éxito del Pago -->
+                <div id="vistaExito" class="hidden flex flex-col items-center text-center py-4">
+                    <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-4xl mb-4 shadow-[0_0_25px_rgba(34,197,94,0.3)]">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+
+                    <h3 class="text-xl font-extrabold text-slate-900 mb-1">¡Pago realizado!</h3>
+                    <p class="text-xs text-slate-500 mb-6 font-medium">El pago se acreditó exitosamente.</p>
+
+                    <div class="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-6 text-left flex flex-col gap-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400 font-semibold">Total pagado:</span>
+                            <span id="txtComprobanteMonto" class="font-extrabold text-slate-900 text-sm">$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400 font-semibold">Destino:</span>
+                            <span id="txtComprobanteDestino" class="font-bold text-slate-700">Comercio</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400 font-semibold">Rubro:</span>
+                            <span id="txtComprobanteRubro" class="font-bold text-slate-700">Comida</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400 font-semibold">Método:</span>
+                            <span class="font-bold text-blue-600">Billetera (QR)</span>
+                        </div>
+                    </div>
+
+                    <a href="../dashboard/indexDashboard.html" class="w-full h-14 bg-blue-600 text-white rounded-2xl font-extrabold text-sm flex items-center justify-center hover:bg-blue-700 transition shadow-md">
+                        Volver al Inicio
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
     </main>
 
     <script src="../fx.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const visor = document.getElementById('visorScanner');
-            const laser = document.getElementById('laser');
-            const msgExito = document.getElementById('msgExito');
-            
-            // Simulación de escaneo exitoso a los 3 segundos
-            setTimeout(() => {
-                // Detener láser
-                laser.style.display = 'none';
-                
-                // Efecto verde
-                visor.classList.add('scan-success');
-                msgExito.classList.remove('hidden');
-                setTimeout(() => msgExito.classList.remove('opacity-0'), 50);
-
-                // Redirigir a la pantalla de transferencia precargando los datos
-                setTimeout(() => {
-                    document.body.classList.add('opacity-0');
-                    setTimeout(() => {
-                        // Pasamos a transferencia (Paso 2 automáticamente por los params)
-                        window.location.href = '../transferencia/indexTransferencia.html?alias=super.dia&nombre=Supermercado%20Día';
-                    }, 100);
-                }, 1000);
-
-            }, 3000);
-        });
-    </script>
+    <script src="srcPagar.js"></script>
 </body>
 </html>
