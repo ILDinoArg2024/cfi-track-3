@@ -34,6 +34,9 @@ public class DataInitializer {
                 jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS type VARCHAR(255);");
                 jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS created_at TIMESTAMP;");
                 jdbcTemplate.execute("ALTER TABLE transaction ADD COLUMN IF NOT EXISTS amount NUMERIC(38,2);");
+                jdbcTemplate.execute("ALTER TABLE transaction ALTER COLUMN description DROP NOT NULL;");
+                jdbcTemplate.execute("ALTER TABLE transaction ALTER COLUMN source_account_id DROP NOT NULL;");
+                jdbcTemplate.execute("ALTER TABLE transaction ALTER COLUMN destination_account_id DROP NOT NULL;");
                 jdbcTemplate.execute("ALTER TABLE transfers ADD COLUMN IF NOT EXISTS related_account_id BIGINT;");
                 jdbcTemplate.execute("ALTER TABLE transfers ADD COLUMN IF NOT EXISTS description VARCHAR(255);");
                 jdbcTemplate.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS category VARCHAR(50);");
