@@ -48,14 +48,18 @@ public class DataInitializer {
                 ));
             }
 
-            if(categoryRepository.count() == 0){
+            if (categoryRepository.findByName("DEPOSIT").isEmpty()) {
                 categoryRepository.save(new Category("DEPOSIT"));
+            }
+            if (categoryRepository.findByName("TRANSFER").isEmpty()) {
                 categoryRepository.save(new Category("TRANSFER"));
+            }
+            if (categoryRepository.findByName("PAYMENT").isEmpty()) {
                 categoryRepository.save(new Category("PAYMENT"));
             }
 
             // Precarga del método de pago QR
-            if(paymentMethodRepository.count() == 0){
+            if (paymentMethodRepository.findByName("QR").isEmpty()) {
                 paymentMethodRepository.save(new PaymentMethod("QR"));
             }
         };
