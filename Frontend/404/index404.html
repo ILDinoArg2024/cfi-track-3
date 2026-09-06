@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlkyWall - Página no encontrada</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 flex items-center justify-center min-h-screen p-4 opacity-0 transition-opacity duration-100 ease-in-out">
+
+    <main class="w-full max-w-[380px] bg-gradient-to-b from-[#f0f6ff] to-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center text-center my-8">
+        
+        <!-- Logo AlkyWall -->
+        <div class="inline-flex justify-center items-center gap-3 mb-4 mt-2">
+            <img src="../assets/logo.png" alt="AlkyWall Logo" class="w-10 h-10 object-contain drop-shadow-md">
+            <div>
+                <span class="text-slate-900 text-xl font-extrabold">Alky</span><span class="text-blue-600 text-xl font-extrabold">Wall</span>
+            </div>
+        </div>
+
+        <!-- Animacion Lottie 404 -->
+        <div id="lottie404" class="w-64 h-56 flex items-center justify-center mb-2"></div>
+
+        <h1 class="text-xl font-extrabold text-slate-900 mb-2">Página no encontrada</h1>
+        <p class="text-xs font-medium text-slate-500 mb-6 leading-relaxed px-2">
+            Parece que la sección a la que intentás acceder no existe o fue movida.
+        </p>
+
+        <!-- Botones de Acción -->
+        <div class="w-full flex flex-col gap-3">
+            <a id="btnIrInicio" href="../dashboard/indexDashboard.html" class="w-full h-12 bg-blue-600 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition shadow-md">
+                <i class="fa-solid fa-house text-xs"></i>
+                Ir al Inicio
+            </a>
+            <button onclick="window.history.back()" class="w-full h-12 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition">
+                Volver atrás
+            </button>
+        </div>
+
+    </main>
+
+    <script src="../fx.js"></script>
+    <script src="src404.js"></script>
+</body>
+</html>
