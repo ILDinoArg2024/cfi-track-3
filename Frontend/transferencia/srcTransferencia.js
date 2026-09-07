@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const paso4 = document.getElementById('paso4');
     const paso5 = document.getElementById('paso5');
     const btnReintentar = document.getElementById('btnReintentar');
-
+    const saldoDisponible = document.getElementById('saldoDisponible');
 
     // INICIALIZACIÓN
 
@@ -202,19 +202,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         const usuarioDestino = await getUserDataByAliasOrCvu(busqueda);
         if (!usuarioDestino) return;
 
-        destinatarioActual = usuarioDestino;
-        destinatarioActual.esNuevo = true;
+        destinatarioActual = {
+            ...usuarioDestino,
+            esNuevo: true
+        };
         llenarFichaPaso2();
         mostrarPaso(2);
     });
 
     // Carga los contactos en el paso 1
+    let contactos;
     const cargarContactosPaso1 = async () => {
         const listaContenedor = document.getElementById('listaContactosTransferir');
         const msgSinContactos = document.getElementById('msgSinContactosTransferir');
         if (!listaContenedor) return;
 
-        const contactos = await getContactos();
+        contactos = await getContactos();
         listaContenedor.innerHTML = '';
 
         if (contactos.length === 0) {
@@ -242,8 +245,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.addEventListener('click', async () => {
                 const usuarioDestino = await getUserDataByAliasOrCvu(alias);
                 if (usuarioDestino) {
-                    destinatarioActual = usuarioDestino;
-                    destinatarioActual.esNuevo = false;
+                    destinatarioActual = {
+                        ...usuarioDestino,
+                        esNuevo: false
+                    };
                     llenarFichaPaso2();
                     mostrarPaso(2);
                 }
@@ -255,27 +260,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     cargarContactosPaso1();
 
+    const usuarioActual = await getUser();
 
     const llenarFichaPaso2 = () => {
         nombreDestinatario.innerText = destinatarioActual.firstName;
         // Tomamos las dos primeras letras para el avatar
         avatarDestinatario.innerText = destinatarioActual.firstName.substring(0, 2).toUpperCase();
+        saldoDisponible.innerText = usuarioActual.account.balance;
+
+        contactos.forEach(contacto => {
+            if(destinatarioActual.account.alias === contacto.alias) {
+                destinatarioActual.esNuevo = false;
+            }
+        })
     };
 
     btnCambiarDestino.addEventListener('click', () => {
         mostrarPaso(1);
     });
 
+    const msgSaldoInsuficiente = document.getElementById('msgSaldoInsuficiente');
     // Habilitar botón de monto solo si es > 0
     inputMonto.addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
-        if (val > 0) {
+        const excedeSaldo = val > usuarioActual.account.balance;
+
+        if (val > 0 && !excedeSaldo) {
             btnContinuarMonto.disabled = false;
             btnContinuarMonto.classList.remove('opacity-50', 'cursor-not-allowed');
             montoActual = val;
         } else {
             btnContinuarMonto.disabled = true;
             btnContinuarMonto.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        if (msgSaldoInsuficiente) {
+            msgSaldoInsuficiente.classList.toggle('hidden', !excedeSaldo);
         }
     });
 
@@ -338,7 +358,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         btnTransferir.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Procesando...`;
         // setTimeout(() => {
-        const usuarioActual = await getUser();
 
         if (!usuarioActual || !destinatarioActual || !destinatarioActual.account) {
             console.error("No se pudieron obtener los datos de la cuenta");
@@ -379,6 +398,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             const nombreDestinoFinal = (destinatarioActual.esNuevo && guardarContacto && nombreAgendado.value.trim() !== '') ? nombreAgendado.value.trim() : destinatarioActual.firstName;
             document.getElementById('exitoNombre').innerText = nombreDestinoFinal;
 
+            if(guardarContacto && destinatarioActual.esNuevo){
+                const res = await axiosInstance.post("/contacts", {
+                    "accountIdentifier": destinatarioActual.account.accountNumber,
+                    "name": nombreDestinoFinal
+                });
+
+                if(!res.data.success){
+                    const avisoErrorContacto = document.getElementById('avisoErrorContacto');
+                    avisoErrorContacto.classList.remove('hidden');
+                    avisoErrorContacto.classList.add('flex');
+                }
+            }
+
             const contenedorLottie = document.getElementById('lottieSuccess');
             if (contenedorLottie) {
                 contenedorLottie.innerHTML = '';
@@ -400,8 +432,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (paramAlias) {
         const usuarioDestino = await getUserDataByAliasOrCvu(paramAlias);
         if (usuarioDestino) {
-            destinatarioActual = usuarioDestino;
-            destinatarioActual.esNuevo = false;
+            destinatarioActual = {
+                ...usuarioDestino,
+                esNuevo: false
+            };
+            //destinatarioActual.esNuevo = false;
             llenarFichaPaso2();
             mostrarPaso(2); // Salta directo al monto
         } else {

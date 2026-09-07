@@ -1,7 +1,7 @@
 package com.track3.alkywall.controllers;
 
 import com.track3.alkywall.config.DataApiResponse;
-import com.track3.alkywall.controllers.models.AccountMonthSummary;
+import com.track3.alkywall.controllers.models.IncomeExpenseSummaryResponse;
 import com.track3.alkywall.controllers.models.TransactionResponse;
 import com.track3.alkywall.models.Transaction;
 import com.track3.alkywall.services.TransactionService;
@@ -53,10 +53,10 @@ public class TransactionController {
     }
 
     @GetMapping("/month-income-expense")
-    public ResponseEntity<DataApiResponse<AccountMonthSummary>> getMonthSummary(
+    public ResponseEntity<DataApiResponse<IncomeExpenseSummaryResponse>> getMonthIncomeExpense(
             Authentication authentication
     ){
-        AccountMonthSummary summary = AccountMonthSummary.from(transactionService.getMonthSummary(authentication.getName()));
+        IncomeExpenseSummaryResponse summary = IncomeExpenseSummaryResponse.from(transactionService.getMonthIncomeExpense(authentication.getName()));
 
         return ResponseEntity.ok().body(new DataApiResponse<>(
                 true,

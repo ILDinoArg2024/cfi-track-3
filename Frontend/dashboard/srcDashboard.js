@@ -352,17 +352,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (expandido) {
                 iconoAcordeonGastos.classList.add('rotate-180');
                 contenedorBarras.classList.remove('max-h-0', 'opacity-0', 'mt-0', 'overflow-hidden');
-                contenedorBarras.classList.add('max-h-[200px]', 'opacity-100', 'mt-4', 'overflow-y-auto');
+                contenedorBarras.classList.add('max-h-[170px]', 'opacity-100', 'mt-2', 'overflow-y-auto');
                 barraSegmentadaGastos.classList.add('hidden');
             } else {
                 iconoAcordeonGastos.classList.remove('rotate-180');
                 contenedorBarras.classList.add('max-h-0', 'opacity-0', 'mt-0', 'overflow-hidden');
-                contenedorBarras.classList.remove('max-h-[200px]', 'opacity-100', 'mt-4', 'overflow-y-auto');
+                contenedorBarras.classList.remove('max-h-[170px]', 'opacity-100', 'mt-2', 'overflow-y-auto');
                 setTimeout(() => barraSegmentadaGastos.classList.remove('hidden'), 300);
             }
         };
     };
 
+    renderizarResumenIngresosEgresosMes();
     renderizarAnalisisGastos();
 
 
@@ -476,3 +477,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Historial de movimientos
     renderizarMovimientos();
 });
+
+const obtenerResumenIngresosEgresosMes = async () => {
+    if (!axiosInstance) return null;
+
+    try {
+        const response = await axiosInstance.get("/transaction/month-income-expense");
+        return response.data.data;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
+
+async function renderizarResumenIngresosEgresosMes() {
+    const elIngresos = document.getElementById('montoIngresosMes');
+    const elEgresos = document.getElementById('montoEgresosMes');
+    if (!elIngresos || !elEgresos) return;
+
+    const resumen = await obtenerResumenIngresosEgresosMes();
+    if (!resumen) return;
+
+    const ingresosFormateado = resumen.totalCreditAmount.toLocaleString('es-AR', { minimumFractionDigits: 2 });
+    const egresosFormateado = resumen.totalDebitAmount.toLocaleString('es-AR', { minimumFractionDigits: 2 });
+
+    elIngresos.textContent = `$ ${ingresosFormateado}`;
+    elEgresos.textContent = `$ ${egresosFormateado}`;
+}

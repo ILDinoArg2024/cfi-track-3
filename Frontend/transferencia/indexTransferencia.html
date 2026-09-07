@@ -82,7 +82,10 @@
                     <span class="text-4xl font-extrabold text-slate-300 absolute left-8">$</span>
                     <input type="number" id="inputMonto" placeholder="0" class="w-full text-5xl font-extrabold text-slate-900 bg-transparent text-center outline-none placeholder:text-slate-300">
                 </div>
-                <span class="text-[10px] font-semibold text-slate-400 mt-4 bg-slate-100 px-3 py-1 rounded-full">Saldo disponible: $ 15.000,00</span>
+                <span id="msgSaldoInsuficiente" class="hidden text-[11px] font-bold text-red-500 mt-3">
+                    <i class="fa-solid fa-circle-exclamation mr-1"></i>Saldo insuficiente
+                </span>
+                <span class="text-[10px] font-semibold text-slate-400 mt-4 bg-slate-100 px-3 py-1 rounded-full">Saldo disponible: $ <span id="saldoDisponible"></span></span>
             </div>
 
             <!-- Botón Continuar -->
@@ -152,6 +155,13 @@
             <div id="lottieSuccess" class="w-64 h-64"></div>
             <h2 class="text-2xl font-extrabold text-slate-900 mt-4 text-center">¡Transferencia exitosa!</h2>
             <p class="text-sm font-medium text-slate-500 mt-2 text-center">El dinero ya fue enviado a <strong id="exitoNombre" class="text-slate-800">---</strong>.</p>
+
+            <!-- Aviso: la transferencia fue exitosa pero no se pudo agendar el contacto -->
+            <div id="avisoErrorContacto" class="hidden mt-4 w-full items-center gap-2.5 bg-amber-50 border border-amber-100 text-amber-700 rounded-2xl px-4 py-3">
+                <i class="fa-solid fa-triangle-exclamation text-xs shrink-0"></i>
+                <p class="text-[11px] font-semibold leading-snug">No pudimos agendar este contacto. Podés agregarlo manualmente más tarde.</p>
+            </div>
+
             <a href="../dashboard/indexDashboard.html" class="mt-10 w-full h-14 bg-slate-100 text-blue-600 rounded-[20px] font-extrabold text-base transition hover:bg-slate-200 flex items-center justify-center gap-2 page-transition">
                 Volver al inicio
             </a>

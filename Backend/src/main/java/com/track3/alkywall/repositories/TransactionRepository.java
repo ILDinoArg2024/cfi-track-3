@@ -2,7 +2,7 @@ package com.track3.alkywall.repositories;
 
 import com.track3.alkywall.models.Transaction;
 import com.track3.alkywall.models.Transfer;
-import com.track3.alkywall.services.models.TransactionMonthSummary;
+import com.track3.alkywall.services.models.TransactionTypeAmountSummary;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,13 +22,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     // truncate(local_datetime, month) devuelve la fecha actual pero con el día 1
     @Query("""
     select
-        t.type,
-        sum(t.amount)
+        t.type as type,
+        sum(t.amount) as totalAmount
     from Transaction t
     where
         t.createdAt between truncate(local_datetime, month) and local_datetime
         and t.account.id = ?1
     group by t.type
     """)
-    List<TransactionMonthSummary> getMonthSummaryByAccountId(Long accountId);
+    List<TransactionTypeAmountSummary> getMonthIncomeExpenseByAccountId(Long accountId);
 }
