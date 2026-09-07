@@ -26,12 +26,30 @@ async function logIn(data) {
                 // Si los campos son válidos hago la petición http
                 const userRequest = new UserRequest(email, password);
                 userResponse = await findUser(userRequest);
-                if (userResponse && userResponse.data.token !== '') {
-                    localStorage.setItem('token', userResponse.data.token);
+                if (userResponse && userResponse.data && userResponse.data.token) {
+                    const token = userResponse.data.token;
+                    localStorage.setItem('token', token);
+
+                    // Detecta si es admin desde la respuesta o decodificando el payload del token
+                    let role = userResponse.data.role;
+                    if (!role) {
+                        try {
+                            const payloadBase64 = token.split('.')[1];
+                            const payload = JSON.parse(atob(payloadBase64));
+                            role = payload.role;
+                        } catch (e) {
+                            console.error("Error al leer rol del token:", e);
+                        }
+                    }
+
                     mostrarMensaje("Inicio de sesión exitoso", document.getElementById('responseGeneral'));
-                    window.location.href = "../dashboard/indexDashboard.html";
-                } else {
-                    mostrarMensaje("Email o contraseña incorrectos", document.getElementById('responseGeneral'));
+
+                    // Si es administrador va a su panel, si es usuario normal va al dashboard
+                    if (role === 'ADMIN') {
+                        window.location.href = "../admin/indexAdmin.html";
+                    } else {
+                        window.location.href = "../dashboard/indexDashboard.html";
+                    }
                 }
             } catch (error) {
                 mostrarMensaje("Ocurrió un error al iniciar sesión", document.getElementById('responseGeneral'));
@@ -49,10 +67,12 @@ const findUser = async (loginRequest) => {
     }
     catch (error) {
         console.error(error);
+        const mensajeError = error.response?.data?.message || 'Email o contraseña incorrectos';
         mostrarMensaje(
-            'Ocurrió un error al iniciar sesión',
+            mensajeError,
             document.getElementById('responseGeneral')
         );
+        return null;
     }
     finally {
         console.log("Request completed");

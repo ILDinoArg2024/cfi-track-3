@@ -31,13 +31,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const toastCopiar = document.getElementById('toastCopiar');
     let toastTimeout;
 
-    //Mostrar información del usuario
-    const user = (await getUser());
-    nombreUsuario.innerText = user.data.firstName + user.data.lastName.charAt(0).toUpperCase();;
-    emailUsuario.innerText = user.data.email;
-    cvuUsuario.innerText = user.data.account.accountNumber;
-    aliasUsuario.innerText = user.data.account.alias;
-    dniUsuario.innerText = user.data.dni;
+    const inicialesUsuario = document.getElementById('inicialesUsuario');
+    const rowCVU = document.getElementById('rowCVU');
+    const rowAlias = document.getElementById('rowAlias');
+
+    // Mostrar información del usuario
+    const user = await getUser();
+    if (user && user.data) {
+        const { firstName, lastName, email, dni, account } = user.data;
+        if (nombreUsuario) nombreUsuario.innerText = `${firstName} ${lastName}`;
+        if (inicialesUsuario && firstName && lastName) {
+            inicialesUsuario.innerText = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+        }
+        if (emailUsuario) emailUsuario.innerText = email || "";
+        if (cvuUsuario) cvuUsuario.innerText = account ? account.accountNumber : "";
+        if (aliasUsuario) aliasUsuario.innerText = account ? account.alias : "";
+        if (dniUsuario) dniUsuario.innerText = dni || "";
+    }
     
     
 
@@ -96,13 +106,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // Event Listeners
+    // Event Listeners para copiar
     if (btnCopiarCVU) {
-        btnCopiarCVU.addEventListener('click', () => copiarAlPortapapeles(cvuUsuario));
+        btnCopiarCVU.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copiarAlPortapapeles(cvuUsuario);
+        });
+    }
+    if (rowCVU) {
+        rowCVU.addEventListener('click', () => copiarAlPortapapeles(cvuUsuario));
     }
 
     if (btnCopiarAlias) {
-        btnCopiarAlias.addEventListener('click', () => copiarAlPortapapeles(aliasUsuario));
+        btnCopiarAlias.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copiarAlPortapapeles(aliasUsuario);
+        });
+    }
+    if (rowAlias) {
+        rowAlias.addEventListener('click', (e) => {
+            if (e.target.closest('a')) return;
+            copiarAlPortapapeles(aliasUsuario);
+        });
     }
 
 });

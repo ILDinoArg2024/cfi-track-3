@@ -15,19 +15,19 @@ import java.math.BigDecimal;
 public class Payment extends Transaction{
     // Categoría del gasto
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @Column(name = "payment_category", length = 50)
     private PaymentCategory paymentCategory;
 
     // Nombre del comercio o concepto del pago
-    @Column(nullable = false, length = 150)
+    @Column(length = 150)
     private String name;
 
     // Método de pago utilizado
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "payment_method_id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "payment_method_id")
     private PaymentMethod paymentMethod;
 
-    @ManyToOne(optional = false)
+    @ManyToOne
     @JoinColumn(name = "related_account_id")
     private Account relatedAccount;
 

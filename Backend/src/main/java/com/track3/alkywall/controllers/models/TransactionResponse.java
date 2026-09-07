@@ -22,6 +22,8 @@ public record TransactionResponse(
      PaymentResponse payment
 ){
     public static TransactionResponse from(Transaction transaction) {
+        if (transaction == null) return null;
+
         TransferResponse transfer = null;
         PaymentResponse paymentResponse = null;
 
@@ -31,11 +33,13 @@ public record TransactionResponse(
             paymentResponse = PaymentResponse.from((Payment) transaction);
         }
 
+        String categoryName = (transaction.getCategory() != null) ? transaction.getCategory().getName() : "GENERAL";
+
         return new TransactionResponse(
                 transaction.getId(),
                 transaction.getAmount(),
                 transaction.getType(),
-                transaction.getCategory().getName(),
+                categoryName,
                 transaction.getCreatedAt(),
                 transfer,
                 paymentResponse

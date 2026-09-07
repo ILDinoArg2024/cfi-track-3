@@ -86,7 +86,18 @@ public class UserService {
 
     @Transactional
     public void delete(Long id){
-        userRepository.deleteById(id);
+        User user = userRepository.findById(id).orElseThrow(
+                () -> new NotFoundException("El usuario no existe")
+        );
+
+        // Si el usuario tiene cuenta asociada, la eliminamos primero
+        if (user.getAccount() != null) {
+            Account account = user.getAccount();
+            user.setAccount(null);
+            accountRepository.delete(account);
+        }
+
+        userRepository.delete(user);
     }
 
     @Transactional

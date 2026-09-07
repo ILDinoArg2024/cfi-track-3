@@ -23,19 +23,22 @@ public class PaymentService {
     private final TransactionService transactionService;
     private final AccountService accountService;
     private final CategoryRepository categoryRepository;
+    private final NotificationService notificationService;
 
     public PaymentService(
             PaymentRepository paymentRepository,
             PaymentMethodRepository paymentMethodRepository,
             TransactionService transactionService,
             AccountService accountService,
-            CategoryRepository categoryRepository
+            CategoryRepository categoryRepository,
+            NotificationService notificationService
     ) {
         this.paymentRepository = paymentRepository;
         this.paymentMethodRepository = paymentMethodRepository;
         this.transactionService = transactionService;
         this.accountService = accountService;
         this.categoryRepository = categoryRepository;
+        this.notificationService = notificationService;
     }
 
     // Procesa y guarda un nuevo pago
@@ -49,11 +52,24 @@ public class PaymentService {
     ) {
         Account sourceAccount = accountService.getAccountByUserEmail(emailUserAuthenticated);
 
+        // Si la cuenta pagadora está suspendida, no puede pagar
+        if (sourceAccount.getUser() != null && Boolean.FALSE.equals(sourceAccount.getUser().getIsActive())) {
+            log.error("Usuario pagador={} está suspendido", emailUserAuthenticated);
+            throw new InvalidTransferException("Tu cuenta se encuentra suspendida. No podés realizar pagos.");
+        }
+
         log.info("Iniciando pago de cuentaOrigen={} a cuentaDestino={}, categoria={}",
                 sourceAccount.getAccountNumber(), destinationAccountIdentifier, paymentCategory);
 
         // Valida la cuenta destino
         Account destinationAccount = accountService.getAccountByAccountNumberOrAlias(destinationAccountIdentifier);
+
+        // Si el destinatario del cobro está suspendido, no puede recibir dinero
+        if (destinationAccount.getUser() != null && Boolean.FALSE.equals(destinationAccount.getUser().getIsActive())) {
+            log.error("Cuenta destino={} pertenece a un usuario suspendido", destinationAccountIdentifier);
+            throw new InvalidTransferException("La cuenta de destino se encuentra suspendida y no puede recibir cobros.");
+        }
+
         if (sourceAccount.getId().equals(destinationAccount.getId())) {
             log.error("Intento de pago a la misma cuenta");
             throw new InvalidTransferException("No se puede realizar un pago a la misma cuenta");
@@ -84,7 +100,28 @@ public class PaymentService {
         ));
 
         // Guarda el pago en la base de datos
-        return paymentRepository.saveAll(payments).getFirst();
+        Payment result = paymentRepository.saveAll(payments).getFirst();
+
+        // Notificaciones para el emisor y el receptor
+        String receiverName = (destinationAccount.getUser() != null)
+                ? (destinationAccount.getUser().getFirstName() + " " + destinationAccount.getUser().getLastName()).trim()
+                : destinationAccountIdentifier;
+
+        notificationService.createNotification(
+                sourceAccount.getUser(),
+                "Pago realizado",
+                "Pagaste $" + amount + " a " + receiverName + " (" + paymentConcept + ").",
+                "PAYMENT_SENT"
+        );
+
+        notificationService.createNotification(
+                destinationAccount.getUser(),
+                "Cobro recibido",
+                "Recibiste un pago de $" + amount + " (" + paymentConcept + ").",
+                "PAYMENT_RECEIVED"
+        );
+
+        return result;
     }
 
     // Obtiene los gastos del mes agrupados por categoría

@@ -32,17 +32,17 @@ const getAllUsers = async () => {
     }
 }
 const deleteUser = async (id) => {
-    if (!axiosInstance) return null;
+    if (!axiosInstance) return false;
     try {
         const response = await axiosInstance.delete("/user/" + id);
-        return response.data;
+        return response.status == 204 || response.status == 200;
     }
     catch (error) {
         console.error(error);
         if (error.status == 401 || error.status == 403) {
             window.location.href = "../login/indexLogin.html"
         }
-        return null;
+        return false;
     }
 }
 const toggleBlock = async (id) => {
@@ -76,16 +76,25 @@ const editUser = async (id, userUpdateRequest) => {
 
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Si no está logueado o no es administrador, redirige al login
+    const token = localStorage.getItem("token");
+    if (!token) {
+        window.location.href = "../login/indexLogin.html";
+        return;
+    }
 
-    // mockup base de datos (Usuarios)
-    // let usuariosBD = [
-    //     { id: 1, firstName: "Franco", lastName: "Colleti", dni: "38123456", cvu: "0000003100012345678901", rol: "admin", estado: "activo" },
-    //     { id: 2, firstName: "Jonatan", lastName: "M.", dni: "39876543", cvu: "0000003100098765432102", rol: "usuario", estado: "activo" },
-    //     { id: 3, firstName: "Xavier", lastName: "C.", dni: "40111222", cvu: "0000003100011122233303", rol: "usuario", estado: "bloqueado" },
-    //     { id: 4, firstName: "María", lastName: "Gómez", dni: "37555444", cvu: "0000003100044455566604", rol: "usuario", estado: "activo" },
-    //     { id: 5, firstName: "Esteban", lastName: "Quito", dni: "33222111", cvu: "0000003100077788899905", rol: "usuario", estado: "activo" }
-    // ];
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role && payload.role !== 'ADMIN') {
+            window.location.href = "../dashboard/indexDashboard.html";
+            return;
+        }
+    } catch (e) {
+        console.error("Error al verificar permisos de admin:", e);
+    }
+
     let usuariosBD = await getAllUsers();
+    if (!usuariosBD) return;
 
     const listaUsuariosContenedor = document.getElementById('listaUsuarios');
     const inputBuscarUsuario = document.getElementById('inputBuscarUsuario');
@@ -260,18 +269,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Petición al backend
             if (accionPendiente === 'eliminar') {
                 exito = await deleteUser(usuarioSeleccionado.id);
-                usuariosBD = usuariosBD.filter(u => u.id !== usuarioSeleccionado.id);
+                if (exito) {
+                    usuariosBD = usuariosBD.filter(u => u.id !== usuarioSeleccionado.id);
+                }
             } else if (accionPendiente === 'bloquear') {
                 exito = await toggleBlock(usuarioSeleccionado.id);
-                const idx = usuariosBD.findIndex(u => u.id === usuarioSeleccionado.id);
-                usuariosBD[idx].isActive = false;
+                if (exito) {
+                    const idx = usuariosBD.findIndex(u => u.id === usuarioSeleccionado.id);
+                    if (idx !== -1) usuariosBD[idx].isActive = false;
+                }
             } else if (accionPendiente === 'desbloquear') {
                 exito = await toggleBlock(usuarioSeleccionado.id);
-                const idx = usuariosBD.findIndex(u => u.id === usuarioSeleccionado.id);
-                usuariosBD[idx].isActive = true;
+                if (exito) {
+                    const idx = usuariosBD.findIndex(u => u.id === usuarioSeleccionado.id);
+                    if (idx !== -1) usuariosBD[idx].isActive = true;
+                }
             } 
 
-            renderizarUsuarios(inputBuscarUsuario.value);
+            if (exito) {
+                renderizarUsuarios(inputBuscarUsuario.value);
+            }
             cerrarModal();
             btnConfirmarAccion.innerHTML = 'Confirmar';
 
@@ -407,5 +424,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             toastNotificacion.classList.add('opacity-0', '-translate-y-12', 'pointer-events-none');
         }, 3000);
     };
+
+    // Botón para cerrar sesión
+    const btnCerrarSesionAdmin = document.getElementById('btnCerrarSesionAdmin');
+    if (btnCerrarSesionAdmin) {
+        btnCerrarSesionAdmin.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = "../login/indexLogin.html";
+        });
+    }
 
 });

@@ -42,15 +42,20 @@
             <div class="bg-white rounded-[20px] border border-slate-200 shadow-sm overflow-hidden">
                 
                 <!-- Cambiar Alias -->
-                <button id="btnCambiarAlias" class="w-full p-4 border-b border-slate-100 flex justify-between items-center hover:bg-slate-50 transition group">
-                    <div class="flex flex-col items-start gap-1">
+                <div class="w-full p-4 border-b border-slate-100 flex justify-between items-center hover:bg-slate-50 transition group">
+                    <div id="btnCambiarAlias" class="flex flex-col items-start gap-1 cursor-pointer flex-1">
                         <span class="text-sm font-semibold text-slate-700">Cambiar Alias</span>
-                        <span class="text-[10px] text-slate-400">franco.alkywall</span>
+                        <span id="aliasActualConfig" class="text-[10px] text-slate-400 font-mono">Cargando...</span>
                     </div>
-                    <div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition">
-                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    <div class="flex items-center gap-1.5">
+                        <button id="btnCopiarAliasConfig" class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-blue-600 hover:bg-blue-100 transition" title="Copiar Alias">
+                            <i class="fa-regular fa-copy text-xs"></i>
+                        </button>
+                        <button id="btnAbrirModalAlias" class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition" title="Cambiar Alias">
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
                     </div>
-                </button>
+                </div>
 
                 <!-- Cambiar Teléfono -->
                 <button id="btnCambiarTelefono" class="w-full p-4 flex justify-between items-center hover:bg-slate-50 transition group">
@@ -137,7 +142,51 @@
             </div>
         </div>
         </div>
+
+        <!-- MODAL CAMBIAR ALIAS -->
+        <div id="modalCambiarAlias" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-end justify-center hidden opacity-0 transition-opacity duration-300 md:rounded-[32px] overflow-hidden">
+            <div id="modalCambiarAliasContent" class="bg-white w-full rounded-t-[32px] p-6 pb-8 shadow-2xl transform translate-y-full transition-transform duration-300 flex flex-col gap-4 relative">
+                <div class="flex justify-between items-center mb-1">
+                    <div>
+                        <h3 class="text-lg font-extrabold text-slate-900">Cambiar Alias</h3>
+                        <p class="text-xs text-slate-400">El alias debe ser único en AlkyWall</p>
+                    </div>
+                    <button id="btnCerrarModalAlias" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200 transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block pl-1">Nuevo Alias</label>
+                    <div class="relative flex items-center">
+                        <input type="text" id="inputNuevoAlias" placeholder="ej: mi.nuevo.alias" class="w-full h-12 pl-4 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-colors lowercase">
+                        <button type="button" id="btnLimpiarAlias" class="absolute right-3 text-slate-400 hover:text-slate-600 hidden">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+                    <!-- Mensaje de error / validación -->
+                    <p id="aliasErrorMsg" class="text-xs text-red-500 font-semibold mt-2 pl-1 hidden"></p>
+                    <p class="text-[11px] text-slate-400 mt-1 pl-1">De 4 a 50 caracteres (letras, números, puntos o guiones).</p>
+                </div>
+
+                <div class="flex gap-3 mt-2">
+                    <button id="btnCancelarModalAlias" class="flex-1 h-12 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition">
+                        Cancelar
+                    </button>
+                    <button id="btnGuardarModalAlias" class="flex-1 h-12 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2">
+                        <span>Guardar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Flotante -->
+        <div id="toastConfig" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-sm text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-lg opacity-0 transition-opacity duration-300 pointer-events-none z-50 flex items-center gap-2">
+            <i id="toastConfigIcon" class="fa-solid fa-circle-check text-green-400 text-sm"></i>
+            <span id="toastConfigMsg">¡Alias actualizado con éxito!</span>
+        </div>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="../fx.js"></script>
     <script src="srcConfiguracion.js"></script>
 </body>

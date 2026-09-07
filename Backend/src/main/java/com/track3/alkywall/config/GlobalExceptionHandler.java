@@ -61,6 +61,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(false, exception.getMessage()));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse> illegalArgumentException(IllegalArgumentException exception){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse(false, exception.getMessage()));
+    }
+
     // Redirige a la pagina 404 si la ruta no existe
     @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
     public Object handleNoResourceFound(

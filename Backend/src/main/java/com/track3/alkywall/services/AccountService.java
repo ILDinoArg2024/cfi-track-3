@@ -84,4 +84,31 @@ public class AccountService {
                 }
         );
     }
+
+    // Permite al usuario cambiar su alias si no está repetido
+    @Transactional
+    public String updateAlias(String userEmail, String newAlias) {
+        if (newAlias == null || newAlias.trim().isBlank()) {
+            throw new IllegalArgumentException("El alias no puede estar vacío");
+        }
+
+        String cleanAlias = newAlias.trim().toLowerCase();
+
+        Account account = getAccountByUserEmail(userEmail);
+
+        // Si es el mismo que ya tiene, lo dejamos igual
+        if (cleanAlias.equalsIgnoreCase(account.getAlias())) {
+            return account.getAlias();
+        }
+
+        // Validamos que no exista en otra cuenta
+        if (accountRepository.existsByAlias(cleanAlias)) {
+            throw new AlreadyExistsException("Ese alias ya está en uso");
+        }
+
+        account.setAlias(cleanAlias);
+        accountRepository.save(account);
+        log.info("Alias cambiado a {} para el usuario {}", cleanAlias, userEmail);
+        return cleanAlias;
+    }
 }

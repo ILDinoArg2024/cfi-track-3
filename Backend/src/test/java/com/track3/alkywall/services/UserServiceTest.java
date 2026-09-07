@@ -96,7 +96,13 @@ public class UserServiceTest {
 
     @Test
     void shouldDeleteUser(){
+        User user = new User("", "", "email@gmail.com", "", "", new Role("USER"));
+        user.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
         userService.delete(1L);
-        verify(userRepository).deleteById(1L);
+
+        verify(userRepository).findById(1L);
+        verify(userRepository).delete(user);
     }
 }

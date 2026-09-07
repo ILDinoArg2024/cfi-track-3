@@ -65,9 +65,9 @@ function obtenerIconoParaCategoria(label) {
 
 export async function obtenerMovimientosHTML(type = null, mostrarFecha = true, limite = null) {
     let fechaActual = "";
-    const movimientos = await obtenerMovimientos(type);
+    const movimientos = (await obtenerMovimientos(type)) || [];
     let movimientosHTML = "";
-    if(limite === null) limite = movimientos.length
+    if(limite === null) limite = movimientos.length;
     else limite = Math.min(limite, movimientos.length);
     for(let i=0; i<limite; i++){
         let mov = movimientos[i];
@@ -81,7 +81,16 @@ export async function obtenerMovimientosHTML(type = null, mostrarFecha = true, l
         }
 
         const montoFormateado = Math.abs(mov.amount).toLocaleString('es-AR', { minimumFractionDigits: 2 });
-        let icono, esIngreso, titulo, desc, colorMonto;
+        let icono = {
+            icon: 'fa-receipt',
+            iconColor: "text-slate-500",
+            iconBg: "bg-slate-50",
+            iconBorderColor: "border-slate-100"
+        };
+        let esIngreso = mov.type === "CREDIT";
+        let colorMonto = esIngreso ? 'text-blue-600' : 'text-slate-800';
+        let titulo = 'Operación';
+        let desc = '';
 
         if(mov.categoryName === "TRANSFER"){
             esIngreso = mov.type === "CREDIT";
@@ -98,8 +107,12 @@ export async function obtenerMovimientosHTML(type = null, mostrarFecha = true, l
                 iconBorderColor: "border-red-100"
             };
 
+            const nombreRelacionado = [mov.transfer?.relatedAccountFirstName, mov.transfer?.relatedAccountLastName]
+                .filter(Boolean)
+                .join(' ');
+
             titulo = `Transferencia ${esIngreso ? 'Recibida' : 'Enviada'}`;
-            desc = `${esIngreso ? 'De' : 'Para'}: ${mov.transfer.relatedAccountFirstName} ${mov.transfer.relatedAccountLastName}`;
+            desc = nombreRelacionado ? `${esIngreso ? 'De' : 'Para'}: ${nombreRelacionado}` : (mov.transfer?.description || 'Transferencia');
         }else if(mov.categoryName === "DEPOSIT"){
             esIngreso = true;
             colorMonto = 'text-blue-600';
@@ -108,15 +121,35 @@ export async function obtenerMovimientosHTML(type = null, mostrarFecha = true, l
                 iconColor: "text-blue-600",
                 iconBg: "bg-blue-50",
                 iconBorderColor: "border-blue-100"
-            }
-            titulo = 'Depósito'
+            };
+            titulo = 'Depósito';
             desc = '';
         }else if(mov.categoryName === "PAYMENT"){
-            esIngreso = false;
-            colorMonto = 'text-slate-800';
-            icono = obtenerIconoParaCategoria(mov.payment.categoryKey);
-            titulo = 'Pago';
-            desc = mov.payment.category;
+            esIngreso = mov.type === "CREDIT";
+            colorMonto = esIngreso ? 'text-blue-600' : 'text-slate-800';
+
+            if (esIngreso) {
+                // Si es un cobro que recibio con QR
+                icono = {
+                    icon: 'fa-qrcode',
+                    iconColor: 'text-emerald-600',
+                    iconBg: 'bg-emerald-50',
+                    iconBorderColor: 'border-emerald-100'
+                };
+                titulo = 'Cobro recibido';
+                const pagador = [mov.payment?.relatedFirstName, mov.payment?.relatedLastName]
+                    .filter(Boolean)
+                    .join(' ');
+                desc = pagador
+                    ? `De: ${pagador}${mov.payment?.category ? ` • ${mov.payment.category}` : ''}`
+                    : (mov.payment?.category || 'Cobro con QR');
+            } else {
+                // Si es un pago que realizo el usuario
+                const catKey = mov.payment?.categoryKey || 'OTROS';
+                icono = obtenerIconoParaCategoria(catKey);
+                titulo = 'Pago';
+                desc = mov.payment?.category || 'Pago con QR';
+            }
         }
 
         movimientosHTML += `

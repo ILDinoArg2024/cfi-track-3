@@ -2,6 +2,7 @@ package com.track3.alkywall.controllers;
 
 import com.track3.alkywall.config.DataApiResponse;
 import com.track3.alkywall.controllers.models.AccountDTO;
+import com.track3.alkywall.controllers.models.UpdateAliasRequest;
 import com.track3.alkywall.services.AccountService;
 import com.track3.alkywall.services.JwtService;
 import jakarta.validation.Valid;
@@ -36,5 +37,19 @@ public class AccountController {
             log.info("Authentication was null");
             return ResponseEntity.badRequest().body("Credenciales inválidas");
         }
+    }
+
+    // Endpoint para que el usuario pueda cambiar su alias
+    @PutMapping("/alias")
+    public ResponseEntity<DataApiResponse<String>> updateAlias(
+            Authentication authentication,
+            @Valid @RequestBody UpdateAliasRequest request
+    ) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new DataApiResponse<>(false, "Credenciales inválidas", null));
+        }
+        String updatedAlias = accountService.updateAlias(authentication.getName(), request.alias());
+        return ResponseEntity.ok(new DataApiResponse<>(true, "Alias actualizado con éxito", updatedAlias));
     }
 }

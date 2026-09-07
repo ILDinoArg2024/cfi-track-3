@@ -30,6 +30,17 @@ class DepositResponse {
 async function onInit(event) {
     const token = localStorage.getItem("token");
     if (token != null) {
+        // Si el usuario logueado es administrador, lo mandamos directo a su panel
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.role === 'ADMIN') {
+                window.location.href = "../admin/indexAdmin.html";
+                return;
+            }
+        } catch (e) {
+            console.error("Error al verificar rol:", e);
+        }
+
         let accountData = await getAccount();
         if (accountData) {
             mostrarInfo(accountData);
@@ -38,10 +49,31 @@ async function onInit(event) {
         if (contactosFrecuentes) {
             cargarContactosFrecuentes(contactosFrecuentes);
         }
+        let unreadCount = await getUnreadNotificationsCount();
+        actualizarBadgeNotificaciones(unreadCount);
     } else {
         // window.location.href = "../login/indexLogin.html"; // Comentado temporalmente si se quiere ver el mockup
     }
 }
+
+// Al volver atrás desde otra página o al volver a la pestaña, refresca el badge
+window.addEventListener('pageshow', async () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+        const unreadCount = await getUnreadNotificationsCount();
+        actualizarBadgeNotificaciones(unreadCount);
+    }
+});
+
+document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible') {
+        const token = localStorage.getItem("token");
+        if (token) {
+            const unreadCount = await getUnreadNotificationsCount();
+            actualizarBadgeNotificaciones(unreadCount);
+        }
+    }
+});
 
 // Instancia para poder realizar peticiones HTTP
 const axiosInstance = typeof axios !== 'undefined' ? axios.create({
@@ -75,6 +107,27 @@ const getContactosFrecuentes = async () => {
     catch (error) {
         console.error(error);
         return null;
+    }
+}
+
+const getUnreadNotificationsCount = async () => {
+    if (!axiosInstance) return 0;
+    try {
+        const response = await axiosInstance.get("/notifications/unread-count");
+        return response.data?.data?.unreadCount || 0;
+    } catch (error) {
+        console.error("Error al obtener contador de notificaciones:", error);
+        return 0;
+    }
+}
+
+function actualizarBadgeNotificaciones(unreadCount) {
+    const badge = document.getElementById('notificationBadge');
+    if (!badge) return;
+    if (unreadCount > 0) {
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
     }
 }
 
@@ -157,7 +210,8 @@ async function renderizarMovimientos(){
 
     listaMovimientos.innerHTML = '';
 
-    let movimientosHTML = await obtenerMovimientosHTML(null, false, 15);
+    // Mostramos solo los ultimos 5 movimientos en el dashboard
+    let movimientosHTML = await obtenerMovimientosHTML(null, false, 5);
 
     if (movimientosHTML === "") {
         // Mostrar mensaje vacío
@@ -280,61 +334,60 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Si aún no hay gastos reales registrados en el mes
-        if (listaGastos.length === 0) {
-            tarjetaAnalisisGastos.classList.remove('cursor-pointer');
-            tarjetaAnalisisGastos.onclick = null;
-            tarjetaAnalisisGastos.innerHTML = `
-                <div class="w-full p-4 flex items-center gap-3.5">
-                    <div class="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 text-sm shrink-0">
-                        <i class="fa-solid fa-chart-pie"></i>
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-xs font-bold text-slate-800">Sin gastos registrados este mes</span>
-                        <span class="text-[11px] font-medium text-slate-400">Tus pagos aparecerán categorizados aquí.</span>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-
-        const totalGastos = listaGastos.reduce((acc, item) => acc + parseFloat(item.amount), 0);
-        textoTotalGastos.innerText = `Total: $ ${totalGastos.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
-
         contenedorBarras.innerHTML = '';
         barraSegmentadaGastos.innerHTML = '';
 
-        listaGastos.forEach((item) => {
-            const estilo = ESTILOS_CATEGORIAS[item.category] || ESTILOS_CATEGORIAS['OTROS'];
-            const porcentaje = item.percentage;
-            const montoFormateado = parseFloat(item.amount).toLocaleString('es-AR', { minimumFractionDigits: 2 });
-
-            // Inyecta el segmento en la barra principal
-            const segmentoHTML = `<div class="h-full ${estilo.colorClass} transition-all duration-1000 ease-out" style="width: 0%;" data-target-width="${porcentaje}%"></div>`;
-            barraSegmentadaGastos.insertAdjacentHTML('beforeend', segmentoHTML);
-
-            // Inyecta la barra individual detallada
-            const barraIndividualHTML = `
-                <div class="flex flex-col gap-2 group">
-                    <div class="flex justify-between items-end">
-                        <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 rounded-full ${estilo.iconBg} ${estilo.iconColor} flex items-center justify-center text-[10px]">
-                                <i class="fa-solid ${estilo.icon}"></i>
-                            </div>
-                            <span class="text-xs font-bold text-slate-700">${item.displayName}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] font-bold text-slate-400">$ ${montoFormateado}</span>
-                            <span class="text-xs font-extrabold text-slate-800">${porcentaje}%</span>
-                        </div>
+        // Si aún no hay gastos reales registrados en el mes
+        if (listaGastos.length === 0) {
+            textoTotalGastos.innerText = "Total: $ 0,00";
+            barraSegmentadaGastos.innerHTML = `<div class="w-full h-full bg-slate-200/80 rounded-full"></div>`;
+            contenedorBarras.innerHTML = `
+                <div class="p-3 bg-slate-50 rounded-xl flex items-center gap-3 border border-slate-100">
+                    <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-xs shrink-0">
+                        <i class="fa-solid fa-receipt"></i>
                     </div>
-                    <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full ${estilo.colorClass} rounded-full transition-all duration-1000 ease-out" style="width: 0%;" data-target-width="${porcentaje}%"></div>
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-slate-700">Sin pagos registrados este mes</span>
+                        <span class="text-[10px] text-slate-400">Tus pagos aparecerán categorizados aquí.</span>
                     </div>
                 </div>
             `;
-            contenedorBarras.insertAdjacentHTML('beforeend', barraIndividualHTML);
-        });
+        } else {
+            const totalGastos = listaGastos.reduce((acc, item) => acc + parseFloat(item.amount), 0);
+            textoTotalGastos.innerText = `Total: $ ${totalGastos.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+
+            listaGastos.forEach((item) => {
+                const estilo = ESTILOS_CATEGORIAS[item.category] || ESTILOS_CATEGORIAS['OTROS'];
+                const porcentaje = item.percentage;
+                const montoFormateado = parseFloat(item.amount).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+
+                // Inyecta el segmento en la barra principal
+                const segmentoHTML = `<div class="h-full ${estilo.colorClass} transition-all duration-1000 ease-out" style="width: 0%;" data-target-width="${porcentaje}%"></div>`;
+                barraSegmentadaGastos.insertAdjacentHTML('beforeend', segmentoHTML);
+
+                // Inyecta la barra individual detallada
+                const barraIndividualHTML = `
+                    <div class="flex flex-col gap-2 group">
+                        <div class="flex justify-between items-end">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full ${estilo.iconBg} ${estilo.iconColor} flex items-center justify-center text-[10px]">
+                                    <i class="fa-solid ${estilo.icon}"></i>
+                                </div>
+                                <span class="text-xs font-bold text-slate-700">${item.displayName}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold text-slate-400">$ ${montoFormateado}</span>
+                                <span class="text-xs font-extrabold text-slate-800">${porcentaje}%</span>
+                            </div>
+                        </div>
+                        <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full ${estilo.colorClass} rounded-full transition-all duration-1000 ease-out" style="width: 0%;" data-target-width="${porcentaje}%"></div>
+                        </div>
+                    </div>
+                `;
+                contenedorBarras.insertAdjacentHTML('beforeend', barraIndividualHTML);
+            });
+        }
 
         // Anima las barras
         setTimeout(() => {
@@ -345,20 +398,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Control del acordeón
         let expandido = false;
-        contenedorBarras.onclick = (e) => e.stopPropagation();
+        const detalleExtra = document.getElementById('detalleExtraAcordeon');
+        if (detalleExtra) {
+            detalleExtra.onclick = (e) => e.stopPropagation();
+        }
 
         tarjetaAnalisisGastos.onclick = () => {
             expandido = !expandido;
             if (expandido) {
                 iconoAcordeonGastos.classList.add('rotate-180');
-                contenedorBarras.classList.remove('max-h-0', 'opacity-0', 'mt-0', 'overflow-hidden');
-                contenedorBarras.classList.add('max-h-[170px]', 'opacity-100', 'mt-2', 'overflow-y-auto');
                 barraSegmentadaGastos.classList.add('hidden');
+                if (detalleExtra) {
+                    detalleExtra.classList.remove('hidden');
+                    setTimeout(() => {
+                        detalleExtra.classList.remove('max-h-0', 'opacity-0');
+                        detalleExtra.classList.add('max-h-[600px]', 'opacity-100');
+                    }, 10);
+                }
             } else {
                 iconoAcordeonGastos.classList.remove('rotate-180');
-                contenedorBarras.classList.add('max-h-0', 'opacity-0', 'mt-0', 'overflow-hidden');
-                contenedorBarras.classList.remove('max-h-[170px]', 'opacity-100', 'mt-2', 'overflow-y-auto');
-                setTimeout(() => barraSegmentadaGastos.classList.remove('hidden'), 300);
+                if (detalleExtra) {
+                    detalleExtra.classList.add('max-h-0', 'opacity-0');
+                    detalleExtra.classList.remove('max-h-[600px]', 'opacity-100');
+                    setTimeout(() => {
+                        detalleExtra.classList.add('hidden');
+                        barraSegmentadaGastos.classList.remove('hidden');
+                    }, 300);
+                } else {
+                    barraSegmentadaGastos.classList.remove('hidden');
+                }
             }
         };
     };
@@ -461,6 +529,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const saldoStr = nuevoSaldo.toLocaleString('es-AR', { minimumFractionDigits: 2 });
                 const [enteros, decimales] = saldoStr.split(',');
                 saldoTotalElement.innerHTML = `$ ${enteros}<span class="text-xl opacity-80" id="saldoDecimales">,${decimales}</span>`;
+
+                // Actualizar resumen de ingresos/egresos del mes y movimientos recientes
+                await renderizarResumenIngresosEgresosMes();
+                await renderizarMovimientos();
             }, 1500);
         });
 

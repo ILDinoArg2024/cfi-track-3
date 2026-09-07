@@ -10,12 +10,17 @@ public record TransferResponse(
         String description
 ) {
     public static TransferResponse from(Transfer sourceTransfer) {
+        if (sourceTransfer == null) return null;
         Account relatedAccount = sourceTransfer.getRelatedAccount();
 
+        String firstName = (relatedAccount != null && relatedAccount.getUser() != null) ? relatedAccount.getUser().getFirstName() : "";
+        String lastName = (relatedAccount != null && relatedAccount.getUser() != null) ? relatedAccount.getUser().getLastName() : "";
+        String accountNumber = (relatedAccount != null) ? relatedAccount.getAccountNumber() : "";
+
         return new TransferResponse(
-                relatedAccount.getUser().getFirstName(),
-                relatedAccount.getUser().getLastName(),
-                relatedAccount.getAccountNumber(),
+                firstName,
+                lastName,
+                accountNumber,
                 sourceTransfer.getDescription()
         );
     }

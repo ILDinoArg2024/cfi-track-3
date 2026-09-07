@@ -13,16 +13,25 @@ public record PaymentResponse(
         String relatedAccountNumber
 ) {
     public static PaymentResponse from(Payment payment) {
+        if (payment == null) return null;
         Account relatedAccount = payment.getRelatedAccount();
 
+        String categoryKey = (payment.getPaymentCategory() != null) ? payment.getPaymentCategory().name() : "OTROS";
+        String categoryName = (payment.getPaymentCategory() != null) ? payment.getPaymentCategory().getDisplayName() : "Otros";
+        String method = (payment.getPaymentMethod() != null) ? payment.getPaymentMethod().getName() : "QR";
+
+        String firstName = (relatedAccount != null && relatedAccount.getUser() != null) ? relatedAccount.getUser().getFirstName() : "";
+        String lastName = (relatedAccount != null && relatedAccount.getUser() != null) ? relatedAccount.getUser().getLastName() : "";
+        String accountNumber = (relatedAccount != null) ? relatedAccount.getAccountNumber() : "";
+
         return new PaymentResponse(
-                payment.getPaymentCategory().name(),
-                payment.getPaymentCategory().getDisplayName(),
+                categoryKey,
+                categoryName,
                 payment.getName(),
-                payment.getPaymentMethod().getName(),
-                relatedAccount.getUser().getFirstName(),
-                relatedAccount.getUser().getLastName(),
-                relatedAccount.getAccountNumber()
+                method,
+                firstName,
+                lastName,
+                accountNumber
         );
     }
 }

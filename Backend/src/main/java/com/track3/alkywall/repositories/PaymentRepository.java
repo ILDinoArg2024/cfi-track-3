@@ -25,6 +25,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     where
         p.createdAt between truncate(local_datetime, month) and local_datetime
         and p.account.id = ?1
+        and p.type = 'DEBIT'
     group by p.paymentCategory
     order by totalAmount DESC
     """)

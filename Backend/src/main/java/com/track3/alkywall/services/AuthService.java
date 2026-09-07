@@ -18,12 +18,14 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final AccountService accountService;
+    private final NotificationService notificationService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository, AccountService accountService) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository, AccountService accountService, NotificationService notificationService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
         this.accountService = accountService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -40,13 +42,31 @@ public class AuthService {
         ));
 
         accountService.createAccount(user, "ARS");
+
+        // Notificación de bienvenida
+        notificationService.createNotification(
+                user,
+                "¡Bienvenido a Alkywall!",
+                "Tu cuenta ha sido creada exitosamente. Ya podés comenzar a operar.",
+                "WELCOME"
+        );
     }
 
-    public void loginUser(String email, String loginPassword){
-        Optional<String> password = userRepository.findPasswordByEmail(email);
+    // Valida credenciales y retorna el usuario autenticado
+    public User loginUser(String email, String loginPassword){
+        User user = userRepository.findByEmail(email).orElseThrow(
+                () -> new LoginFailedException("Email o contraseña incorrectos")
+        );
 
-        if(password.isEmpty() || !passwordEncoder.matches(loginPassword, password.get())){
+        if(!passwordEncoder.matches(loginPassword, user.getPassword())){
             throw new LoginFailedException("Email o contraseña incorrectos");
-        };
+        }
+
+        // Si el usuario está suspendido por el admin, no lo dejamos ingresar
+        if (Boolean.FALSE.equals(user.getIsActive())) {
+            throw new LoginFailedException("Tu cuenta se encuentra suspendida. Contactá al soporte.");
+        }
+
+        return user;
     }
 }

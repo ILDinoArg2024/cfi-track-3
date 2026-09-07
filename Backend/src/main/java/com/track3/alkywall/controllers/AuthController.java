@@ -40,18 +40,26 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<DataApiResponse<Map<String, String>>> login(@RequestBody @Valid LoginUserRequest loginUser){
-        authService.loginUser(loginUser.email(), loginUser.password());
+        var user = authService.loginUser(loginUser.email(), loginUser.password());
+        String roleName = user.getRole() != null ? user.getRole().getName() : "USER";
 
         return ResponseEntity.status(HttpStatus.OK).body(
-                createTokenResponse("Inicio de sesión exitoso", loginUser.email())
+                createTokenResponse("Inicio de sesión exitoso", loginUser.email(), roleName)
         );
     }
 
     private DataApiResponse<Map<String, String>> createTokenResponse(String msg, String email){
+        return createTokenResponse(msg, email, "USER");
+    }
+
+    private DataApiResponse<Map<String, String>> createTokenResponse(String msg, String email, String role){
         return new DataApiResponse<>(
                 true,
                 msg,
-                Map.of("token", jwtService.createToken(email))
+                Map.of(
+                        "token", jwtService.createToken(email, role),
+                        "role", role
+                )
         );
     }
 }

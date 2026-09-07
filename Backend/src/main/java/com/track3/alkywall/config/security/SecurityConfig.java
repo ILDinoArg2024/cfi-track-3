@@ -41,9 +41,11 @@ public class SecurityConfig {
                                 "/api/account/**",
                                 "/api/transaction/**",
                                 "/api/contacts/**",
-                                "/api/dashboard/**"
+                                "/api/dashboard/**",
+                                "/api/notifications/**"
                         ).authenticated()
                         .requestMatchers("/api/user/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

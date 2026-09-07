@@ -21,11 +21,13 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountService accountService;
     private final CategoryRepository categoryRepository;
+    private final NotificationService notificationService;
 
-    public TransactionService(TransactionRepository transactionRepository, AccountService accountService, CategoryRepository categoryRepository) {
+    public TransactionService(TransactionRepository transactionRepository, AccountService accountService, CategoryRepository categoryRepository, NotificationService notificationService) {
         this.transactionRepository = transactionRepository;
         this.accountService = accountService;
         this.categoryRepository = categoryRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -37,13 +39,23 @@ public class TransactionService {
         Category category = categoryRepository.findByName("DEPOSIT").orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
 
         accountService.updateAccountBalance(account.getId(), account.getBalance());
-        return transactionRepository.save(new Transaction(
+        Transaction transaction = transactionRepository.save(new Transaction(
                 amount,
                 "CREDIT",
                 "COMPLETED",
                 account,
                 category
         ));
+
+        // Notificación de depósito realizado
+        notificationService.createNotification(
+                account.getUser(),
+                "Depósito exitoso",
+                "Ingresaste $" + amount + " a tu cuenta.",
+                "DEPOSIT"
+        );
+
+        return transaction;
     }
 
     public void modifyAccountBalance(Account account, String type, BigDecimal amount){
