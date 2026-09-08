@@ -77,7 +77,7 @@ document.addEventListener('visibilitychange', async () => {
 
 // Instancia para poder realizar peticiones HTTP
 const axiosInstance = typeof axios !== 'undefined' ? axios.create({
-    baseURL: "http://localhost:8080/api",
+    baseURL: window.API_BASE_URL || "http://localhost:8080/api",
     timeout: 5000,
     headers: {
         "Authorization": "Bearer " + localStorage.getItem("token"),
@@ -320,7 +320,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (token) {
             try {
-                const res = await fetch('http://localhost:8080/api/transaction/payment/expenses/month', {
+                const apiBase = window.API_BASE_URL || 'http://localhost:8080/api';
+                const res = await fetch(`${apiBase}/transaction/payment/expenses/month`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {

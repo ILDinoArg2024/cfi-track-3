@@ -1,4 +1,7 @@
-// Archivo exclusivo para efectos visuales (UI/UX) - No afecta la lógica de negocio
+// URL base de la API según el entorno (si corre en local usa localhost, sino Render)
+window.API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:")
+    ? "http://localhost:8080/api"
+    : "https://alkywall-api-u58g.onrender.com/api";
 
 document.addEventListener('DOMContentLoaded', () => {
     const body = document.body;

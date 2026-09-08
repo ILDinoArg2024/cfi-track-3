@@ -22,9 +22,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let datosCuenta = null;
 
+    const apiBase = window.API_BASE_URL || 'http://localhost:8080/api';
+
     // Carga los datos de la cuenta del cobrador
     try {
-        const res = await fetch('http://localhost:8080/api/account', {
+        const res = await fetch(`${apiBase}/account`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -39,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Carga las categorías disponibles desde el backend
     try {
-        const resCat = await fetch('http://localhost:8080/api/transaction/payment/categories', {
+        const resCat = await fetch(`${apiBase}/transaction/payment/categories`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (resCat.ok) {

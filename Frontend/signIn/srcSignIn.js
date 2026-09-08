@@ -1,5 +1,5 @@
 const axiosInstance = axios.create({
-    baseURL: "http://localhost:8080/api/auth",
+    baseURL: (window.API_BASE_URL || "http://localhost:8080/api") + "/auth",
     timeout: 5000,
     headers: {
         "Content-Type": "application/json"

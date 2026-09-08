@@ -1,5 +1,5 @@
 const axiosInstance = axios.create({
-    baseURL: "http://localhost:8080/api/transaction",
+    baseURL: (window.API_BASE_URL || "http://localhost:8080/api") + "/transaction",
     timeout: 5000,
     headers: {
         "Authorization": "Bearer " + localStorage.getItem("token"),

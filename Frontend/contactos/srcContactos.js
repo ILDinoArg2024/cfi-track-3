@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    const API_BASE_URL = 'http://localhost:8080/api';
+    const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8080/api';
     const listaItemsContactos = document.getElementById('listaItemsContactos');
     const msgSinContactos = document.getElementById('msgSinContactos');
     const msgSinResultados = document.getElementById('msgSinResultados');

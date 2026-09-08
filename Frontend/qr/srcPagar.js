@@ -33,9 +33,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     let datosCuentaPagador = null;
     let datosPagoActual = null;
 
+    const apiBase = window.API_BASE_URL || 'http://localhost:8080/api';
+
     // Obtiene la cuenta y saldo del pagador
     try {
-        const res = await fetch('http://localhost:8080/api/account', {
+        const res = await fetch(`${apiBase}/account`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -157,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         try {
-            const res = await fetch('http://localhost:8080/api/transaction/payment', {
+            const res = await fetch(`${apiBase}/transaction/payment`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
